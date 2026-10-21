@@ -478,6 +478,17 @@ export async function getReviewsForWalker(walkerId: string): Promise<Review[]> {
   return (data as Review[]) || [];
 }
 
+export async function getReviewForWalk(walkId: string): Promise<Review | null> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("reviews")
+    .select("*")
+    .eq("walk_id", walkId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Review | null) || null;
+}
+
 export async function createReview(input: {
   walk_id: string;
   walker_id: string;

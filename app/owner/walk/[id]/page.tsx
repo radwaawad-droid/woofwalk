@@ -6,8 +6,10 @@ import { useEffect, useState } from "react";
 import {
   cancelWalk,
   getMyProfile,
+  getReviewForWalk,
   getWalk,
   getWalkerProfile,
+  Review,
   WalkerProfile,
   WalkWithRefs,
 } from "@/lib/db";
@@ -26,6 +28,7 @@ export default function OwnerWalkDetail() {
   const params = useParams<{ id: string }>();
   const [walk, setWalk] = useState<WalkWithRefs | null>(null);
   const [walkerProfile, setWalkerProfile] = useState<WalkerProfile | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -57,6 +60,13 @@ export default function OwnerWalkDetail() {
       getWalkerProfile(walk.walker_id).then(setWalkerProfile).catch(() => {});
     }
   }, [walk?.walker_id, walkerProfile]);
+
+  // Load any existing review when a walk is completed
+  useEffect(() => {
+    if (walk?.status === "completed" && !review) {
+      getReviewForWalk(walk.id).then(setReview).catch(() => {});
+    }
+  }, [walk?.id, walk?.status, review]);
 
   if (notFound) {
     return (
@@ -185,15 +195,50 @@ export default function OwnerWalkDetail() {
           </Card>
         )}
 
-        {/* Completed state */}
-        {walk.status === "completed" && (
+        {/* Completed state — either prompt to rate, or show the submitted rating */}
+        {walk.status === "completed" && !review && (
           <Card tone="accent">
             <div className="font-serif text-lg">All done.</div>
             <p className="mt-1 text-sm text-midnight/80">
               {walk.walker_name} finished walking {walk.dog_name} at{" "}
-              {fmtTime(walk.ended_at)}. In the real app, your card would be
-              charged AED {walk.price_aed} now.
+              {fmtTime(walk.ended_at)}. Tap below to leave a quick rating.
             </p>
+            <div className="mt-4">
+              <Link
+                href={`/owner/walk/${walk.id}/review`}
+                className="inline-flex items-center justify-center rounded-full bg-midnight px-5 py-3 text-sm font-medium text-bone transition hover:bg-night"
+              >
+                Rate your walk
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {walk.status === "completed" && review && (
+          <Card>
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-stone">
+                  Your rating
+                </div>
+                <div className="mt-1.5 text-lg">
+                  <span className="text-midnight">
+                    {"★".repeat(review.rating)}
+                  </span>
+                  <span className="text-chalk">
+                    {"★".repeat(5 - review.rating)}
+                  </span>
+                </div>
+                {review.comment && (
+                  <p className="mt-2 text-sm italic text-midnight/80">
+                    &ldquo;{review.comment}&rdquo;
+                  </p>
+                )}
+              </div>
+              <div className="text-xs text-stone">
+                {new Date(review.created_at).toLocaleDateString()}
+              </div>
+            </div>
           </Card>
         )}
 
