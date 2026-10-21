@@ -3,41 +3,77 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 
+/* ---------- Icons (inline SVG, no deps) ---------- */
+
+export function PawIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <g fill="currentColor">
+        <ellipse cx="6"  cy="9"  rx="1.6" ry="2.2" />
+        <ellipse cx="10" cy="6"  rx="1.6" ry="2.2" />
+        <ellipse cx="14" cy="6"  rx="1.6" ry="2.2" />
+        <ellipse cx="18" cy="9"  rx="1.6" ry="2.2" />
+        <path d="M12 11c-3.3 0-6 2.4-6 5.1 0 1.6 1.3 2.9 2.9 2.9.9 0 1.6-.3 2.3-.8.5-.4 1.1-.6 1.7-.6s1.2.2 1.7.6c.7.5 1.4.8 2.3.8 1.6 0 2.9-1.3 2.9-2.9 0-2.7-2.7-5.1-6-5.1z" />
+      </g>
+    </svg>
+  );
+}
+
+export function BackIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <path
+        d="M15 19l-7-7 7-7"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/* ---------- Layout chrome ---------- */
+
 export function Header({
   title,
   back,
   right,
 }: {
-  title: string;
+  title?: string;
   back?: string;
   right?: ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-ink-100 bg-white/90 px-4 py-3 backdrop-blur">
-      <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-paper bg-bone/90 px-5 py-3 backdrop-blur">
+      <div className="flex items-center gap-3">
         {back && (
           <Link
             href={back}
-            className="rounded-full p-1 text-ink-700 hover:bg-brand-50"
+            className="rounded-full p-1 text-midnight/70 hover:text-midnight"
             aria-label="Back"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M15 19l-7-7 7-7"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <BackIcon />
           </Link>
         )}
-        <h1 className="text-base font-semibold">{title}</h1>
+        {title && (
+          <h1 className="text-base font-medium tracking-tight">{title}</h1>
+        )}
       </div>
       <div>{right}</div>
     </header>
   );
 }
+
+export function Wordmark({ className = "" }: { className?: string }) {
+  return (
+    <span className={`font-serif text-lg font-medium tracking-tightest ${className}`}>
+      Woof<span className="italic">walk</span>
+    </span>
+  );
+}
+
+/* ---------- Buttons ---------- */
 
 export function Button({
   children,
@@ -46,6 +82,8 @@ export function Button({
   variant = "primary",
   disabled,
   full = true,
+  as,
+  href,
 }: {
   children: ReactNode;
   onClick?: () => void;
@@ -53,26 +91,38 @@ export function Button({
   variant?: "primary" | "secondary" | "ghost" | "danger";
   disabled?: boolean;
   full?: boolean;
+  as?: "button" | "link";
+  href?: string;
 }) {
   const base =
-    "inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[.98] disabled:opacity-50 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center px-5 py-3.5 text-[15px] font-medium transition active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed select-none";
   const variants = {
-    primary: "bg-brand-500 text-white hover:bg-brand-600",
-    secondary: "bg-brand-100 text-brand-800 hover:bg-brand-200",
-    ghost: "bg-transparent text-ink-700 hover:bg-ink-100",
-    danger: "bg-red-600 text-white hover:bg-red-700",
+    primary:
+      "bg-midnight text-bone hover:bg-night rounded-full",
+    secondary:
+      "bg-transparent text-midnight border border-midnight hover:bg-midnight hover:text-bone rounded-full",
+    ghost:
+      "bg-transparent text-midnight/70 hover:text-midnight rounded-full",
+    danger:
+      "bg-clay text-bone hover:brightness-110 rounded-full",
   };
+  const cls = `${base} ${variants[variant]} ${full ? "w-full" : ""}`;
+
+  if (as === "link" && href) {
+    return (
+      <Link href={href} className={cls}>
+        {children}
+      </Link>
+    );
+  }
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={`${base} ${variants[variant]} ${full ? "w-full" : ""}`}
-    >
+    <button type={type} onClick={onClick} disabled={disabled} className={cls}>
       {children}
     </button>
   );
 }
+
+/* ---------- Form ---------- */
 
 export function Field({
   label,
@@ -85,49 +135,67 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-ink-700">
-        {label}
-      </span>
+      <span className="mb-1 block text-xs font-medium text-stone">{label}</span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-ink-500">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-xs text-stone/80">{hint}</span>}
     </label>
   );
 }
 
+// A boxed input (kept for forms where paper-input looks too sparse)
 export const inputCls =
-  "w-full rounded-xl border border-ink-100 bg-white px-3 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
+  "w-full rounded-lg border border-chalk bg-bone px-3 py-3 text-[15px] text-midnight placeholder:text-stone/60 focus:border-midnight focus:outline-none transition";
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+/* ---------- Cards ---------- */
+
+export function Card({
+  children,
+  className = "",
+  tone = "default",
+}: {
+  children: ReactNode;
+  className?: string;
+  tone?: "default" | "dark" | "accent" | "warn";
+}) {
+  const tones = {
+    default: "bg-bone border border-paper",
+    dark: "bg-midnight text-bone border border-midnight",
+    accent: "bg-lime/30 border border-lime",
+    warn: "bg-paper border border-chalk",
+  };
   return (
-    <div
-      className={`rounded-2xl border border-ink-100 bg-white p-4 shadow-sm ${className}`}
-    >
+    <div className={`rounded-2xl p-5 ${tones[tone]} ${className}`}>
       {children}
     </div>
   );
 }
+
+/* ---------- Status pill ---------- */
 
 export function Badge({
   children,
   tone = "neutral",
 }: {
   children: ReactNode;
-  tone?: "neutral" | "warn" | "ok" | "info";
+  tone?: "neutral" | "warn" | "ok" | "info" | "accent";
 }) {
   const tones = {
-    neutral: "bg-ink-100 text-ink-700",
-    warn: "bg-amber-100 text-amber-800",
-    ok: "bg-emerald-100 text-emerald-800",
-    info: "bg-brand-100 text-brand-800",
+    neutral: "bg-paper text-midnight/70",
+    warn: "bg-paper text-amber2",
+    ok: "bg-paper text-emerald2",
+    info: "bg-midnight text-bone",
+    accent: "bg-lime text-midnight",
   };
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tones[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${tones[tone]}`}
     >
       {children}
     </span>
   );
 }
+
+/* ---------- Empty state ---------- */
 
 export function Empty({
   title,
@@ -139,11 +207,19 @@ export function Empty({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-ink-100 bg-brand-50 p-8 text-center">
-      <div className="mb-2 text-3xl">🐾</div>
-      <h3 className="font-semibold">{title}</h3>
-      <p className="mt-1 text-sm text-ink-500">{body}</p>
+    <div className="rounded-2xl border border-dashed border-chalk bg-bone p-8 text-center">
+      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-paper text-midnight/60">
+        <PawIcon className="h-5 w-5" />
+      </div>
+      <h3 className="font-serif text-lg font-medium">{title}</h3>
+      <p className="mt-1 text-sm text-stone">{body}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
+}
+
+/* ---------- Hairline between content sections ---------- */
+
+export function HR() {
+  return <hr className="my-6 border-paper" />;
 }

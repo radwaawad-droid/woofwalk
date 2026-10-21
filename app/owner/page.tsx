@@ -12,18 +12,18 @@ import {
   signOut,
   WalkWithRefs,
 } from "@/lib/db";
-import { Badge, Button, Card, Empty, Header } from "@/components/UI";
+import { Badge, Button, Card, Empty, Header, PawIcon, Wordmark } from "@/components/UI";
 
 function statusTone(s: WalkWithRefs["status"]) {
   if (s === "pending") return "warn" as const;
   if (s === "accepted") return "info" as const;
-  if (s === "in_progress") return "info" as const;
+  if (s === "in_progress") return "accent" as const;
   if (s === "completed") return "ok" as const;
   return "neutral" as const;
 }
 
 function statusLabel(s: WalkWithRefs["status"]) {
-  if (s === "in_progress") return "Walking now";
+  if (s === "in_progress") return "Walking";
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
@@ -47,9 +47,7 @@ export default function OwnerHome() {
       const [d, w] = await Promise.all([getMyDogs(), getMyOwnerWalks()]);
       setDogs(d);
       setWalks(w);
-    } catch (e) {
-      /* ignore */
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -72,7 +70,11 @@ export default function OwnerHome() {
   }, [router]);
 
   if (loading || !profile) {
-    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-stone">
+        Loading
+      </div>
+    );
   }
 
   const active = walks.find(
@@ -80,48 +82,61 @@ export default function OwnerHome() {
   );
 
   return (
-    <main className="min-h-screen pb-24">
+    <main className="min-h-screen pb-28">
       <Header
-        title={`Hi, ${profile.name.split(" ")[0]}`}
+        title=""
         right={
-          <button
-            onClick={async () => {
-              await signOut();
-              router.replace("/");
-            }}
-            className="text-xs font-medium text-ink-500"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <Wordmark className="opacity-80" />
+            <button
+              onClick={async () => {
+                await signOut();
+                router.replace("/");
+              }}
+              className="text-xs text-stone hover:text-midnight"
+            >
+              Sign out
+            </button>
+          </div>
         }
       />
 
-      <section className="space-y-4 px-5 py-5">
+      <section className="px-5 pt-4">
+        <p className="text-sm text-stone">Good day,</p>
+        <h1 className="font-serif text-3xl leading-tight tracking-tightest">
+          {profile.name.split(" ")[0]}.
+        </h1>
+      </section>
+
+      <section className="space-y-4 px-5 py-6">
         {active && (
           <Link href={`/owner/walk/${active.id}`}>
-            <Card className="border-brand-300 bg-brand-50">
+            <Card tone="dark">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-brand-700">
-                    Walk in progress
+                  <div className="text-xs uppercase tracking-wider text-lime">
+                    {active.status === "in_progress" ? "Walking now" : "Walker on the way"}
                   </div>
-                  <div className="mt-1 font-semibold">
-                    {active.walker_name || "Walker"} is walking {active.dog_name}
+                  <div className="mt-1.5 font-serif text-lg">
+                    {active.walker_name || "Walker"} · {active.dog_name}
                   </div>
-                  <div className="mt-0.5 text-sm text-ink-500">
+                  <div className="mt-0.5 text-sm text-bone/70">
                     {active.area} · {active.duration_min} min
                   </div>
                 </div>
-                <div className="text-xl">→</div>
+                <PawIcon className="h-6 w-6 text-lime" />
               </div>
             </Card>
           </Link>
         )}
 
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Your dogs</h2>
-          <Link href="/owner/request" className="text-sm font-semibold text-brand-600">
-            + Request walk
+        <div className="flex items-baseline justify-between pt-2">
+          <h2 className="font-serif text-lg">Your dogs</h2>
+          <Link
+            href="/owner/request"
+            className="text-sm font-medium text-midnight underline underline-offset-2"
+          >
+            Request a walk
           </Link>
         </div>
 
@@ -130,66 +145,64 @@ export default function OwnerHome() {
             title="No dogs yet"
             body="Add your dog to request a walk."
             action={
-              <Link
-                href="/owner/request"
-                className="inline-block rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white"
-              >
-                Add dog & request
-              </Link>
+              <Button as="link" href="/owner/request" full={false}>
+                Add dog
+              </Button>
             }
           />
         ) : (
-          <div className="grid gap-3">
+          <div className="divide-y divide-paper rounded-2xl border border-paper">
             {dogs.map((d) => (
-              <Card key={d.id}>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-2xl">
-                    🐕
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold">{d.name}</div>
-                    <div className="text-sm text-ink-500">
-                      {d.breed || "Mixed"} · {d.size || "medium"}
-                    </div>
+              <div key={d.id} className="flex items-center gap-4 px-4 py-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-paper text-midnight/70">
+                  <PawIcon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">{d.name}</div>
+                  <div className="text-xs text-stone">
+                    {d.breed || "Mixed"} · {d.size || "medium"}
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         )}
 
-        <div className="pt-2">
-          <h2 className="mb-2 font-semibold">Recent walks</h2>
+        <div className="pt-4">
+          <h2 className="mb-3 font-serif text-lg">Recent walks</h2>
           {walks.length === 0 ? (
-            <div className="text-sm text-ink-500">
+            <p className="text-sm text-stone">
               Your walk history will appear here.
-            </div>
+            </p>
           ) : (
-            <div className="space-y-2">
+            <ul className="divide-y divide-paper rounded-2xl border border-paper">
               {walks.map((w) => (
-                <Link key={w.id} href={`/owner/walk/${w.id}`}>
-                  <Card>
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold">{w.dog_name}</div>
-                        <div className="mt-0.5 text-sm text-ink-500">
-                          {w.area} · {w.duration_min} min · AED {w.price_aed}
-                        </div>
-                        <div className="mt-1 text-xs text-ink-500">
-                          {timeAgo(w.created_at)}
-                        </div>
+                <li key={w.id}>
+                  <Link
+                    href={`/owner/walk/${w.id}`}
+                    className="flex items-start justify-between gap-3 px-4 py-4 transition hover:bg-paper/40"
+                  >
+                    <div>
+                      <div className="font-medium">{w.dog_name}</div>
+                      <div className="mt-0.5 text-xs text-stone">
+                        {w.area} · {w.duration_min} min · AED {w.price_aed}
                       </div>
-                      <Badge tone={statusTone(w.status)}>{statusLabel(w.status)}</Badge>
+                      <div className="mt-1 text-xs text-stone/80">
+                        {timeAgo(w.created_at)}
+                      </div>
                     </div>
-                  </Card>
-                </Link>
+                    <Badge tone={statusTone(w.status)}>
+                      {statusLabel(w.status)}
+                    </Badge>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </section>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-ink-100 bg-white px-5 py-3">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-bone px-5 py-3">
         <Button onClick={() => router.push("/owner/request")}>Request a walk</Button>
       </nav>
     </main>

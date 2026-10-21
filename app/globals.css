@@ -8,11 +8,46 @@
 
 html, body {
   min-height: 100%;
-  background: #fdf7f0;
-  color: #1b1a17;
+  background: #F6F1E7;
+  color: #0E1C2F;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Prevent body scroll jump on iOS */
 body { overscroll-behavior-y: none; }
+
+/* The one hairline rule we reuse */
+.hr-paper { border-color: #EFE6D1; }
+
+/* Lime pencil-mark underline for the hero word */
+.pencil-mark {
+  background-image: linear-gradient(transparent 62%, #D8E86B 62%, #D8E86B 92%, transparent 92%);
+  background-repeat: no-repeat;
+}
+
+/* Subtle paw print pattern used behind the hero */
+.pattern-dots {
+  background-image: radial-gradient(#0E1C2F10 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Make inputs look like paper lines, not boxes */
+.paper-input {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #D7CFBD;
+  border-radius: 0;
+  padding: 10px 2px;
+  font-size: 16px;
+  color: #0E1C2F;
+  width: 100%;
+  outline: none;
+  transition: border-color 120ms ease;
+}
+.paper-input:focus {
+  border-bottom-color: #0E1C2F;
+}
+.paper-input::placeholder {
+  color: #B8AF99;
+}

@@ -55,7 +55,7 @@ export default function WalkerWalkDetail() {
   }, [params.id]);
 
   if (!me || !walk) {
-    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+    return <div className="p-8 text-center text-stone">Loading…</div>;
   }
 
   const isMine = walk.walker_id === me.id;
@@ -108,11 +108,11 @@ export default function WalkerWalkDetail() {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs uppercase tracking-wide text-ink-500">
+              <div className="text-xs uppercase tracking-wide text-stone">
                 Dog
               </div>
               <div className="mt-1 text-xl font-bold">{walk.dog_name}</div>
-              <div className="text-sm text-ink-500">{walk.dog_breed || "Mixed"}</div>
+              <div className="text-sm text-stone">{walk.dog_breed || "Mixed"}</div>
             </div>
             <Badge
               tone={
@@ -131,32 +131,32 @@ export default function WalkerWalkDetail() {
         <Card>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <div className="text-xs text-ink-500">Owner</div>
+              <div className="text-xs text-stone">Owner</div>
               <div className="font-semibold">{walk.owner_name}</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Earnings</div>
+              <div className="text-xs text-stone">Earnings</div>
               <div className="font-semibold">AED {walk.price_aed}</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Area</div>
+              <div className="text-xs text-stone">Area</div>
               <div className="font-semibold">{walk.area}</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Duration</div>
+              <div className="text-xs text-stone">Duration</div>
               <div className="font-semibold">{walk.duration_min} min</div>
             </div>
             <div className="col-span-2">
-              <div className="text-xs text-ink-500">Pickup address</div>
+              <div className="text-xs text-stone">Pickup address</div>
               <div className="font-medium">{walk.address}</div>
             </div>
           </div>
         </Card>
 
         {walk.status === "in_progress" && isMine && (
-          <Card className="border-brand-300">
+          <Card className="border-midnight">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-brand-700">
+              <div className="text-sm font-semibold text-midnight">
                 Walk in progress
               </div>
               <span className="flex items-center gap-1 text-xs text-emerald-700">
@@ -164,7 +164,7 @@ export default function WalkerWalkDetail() {
                 Tracking
               </span>
             </div>
-            <div className="mt-3 flex h-40 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+            <div className="mt-3 flex h-40 items-center justify-center rounded-xl bg-paper text-midnight">
               🗺️ GPS tracking (real in v1)
             </div>
             <div className="mt-3 flex items-center justify-between text-sm">
@@ -179,7 +179,7 @@ export default function WalkerWalkDetail() {
           </Card>
         )}
 
-        <div className="text-xs text-ink-500">
+        <div className="text-xs text-stone">
           Requested {fmtTime(walk.created_at)}
           {walk.accepted_at && <> · Accepted {fmtTime(walk.accepted_at)}</>}
           {walk.started_at && <> · Started {fmtTime(walk.started_at)}</>}
@@ -187,7 +187,7 @@ export default function WalkerWalkDetail() {
         </div>
       </section>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-ink-100 bg-white px-5 py-3 space-y-2">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-white px-5 py-3 space-y-2">
         {canAccept && (
           <Button onClick={doAccept} disabled={busy}>
             Accept walk · AED {walk.price_aed}
@@ -209,7 +209,7 @@ export default function WalkerWalkDetail() {
           </div>
         )}
         {!canAccept && !isMine && walk.status !== "completed" && (
-          <div className="text-center text-sm text-ink-500">
+          <div className="text-center text-sm text-stone">
             This walk was taken by another walker.
           </div>
         )}

@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "WoofWalk — Dog walking on demand in Dubai",
-  description: "Book a trusted dog walker in minutes. Live GPS, photo updates, in-app pay.",
+  title: "WoofWalk — Dog walking in Dubai",
+  description:
+    "Hand over the leash. Trusted dog walkers around Dubai, available when you need one.",
   manifest: "/manifest.json",
 };
 
@@ -11,7 +12,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#d4722a",
+  themeColor: "#F6F1E7",
 };
 
 export default function RootLayout({
@@ -21,8 +22,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-brand-50 text-ink-900 font-sans">
-        <div className="mx-auto max-w-md min-h-screen bg-white shadow-xl">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Instrument+Sans:wght@400;500;600&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-screen bg-bone text-midnight font-sans">
+        <div className="mx-auto max-w-md min-h-screen bg-bone">
           {children}
         </div>
       </body>

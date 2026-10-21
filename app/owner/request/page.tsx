@@ -87,7 +87,7 @@ export default function RequestWalk() {
   }
 
   if (!profile) {
-    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+    return <div className="p-8 text-center text-stone">Loading…</div>;
   }
 
   return (
@@ -95,8 +95,8 @@ export default function RequestWalk() {
       <Header title="Request a walk" back="/owner" />
       <form onSubmit={onSubmit} className="space-y-4 px-5 py-5">
         {showAddDog ? (
-          <div className="space-y-3 rounded-2xl border border-brand-200 bg-brand-50 p-4">
-            <div className="text-sm font-semibold text-brand-800">Add a dog</div>
+          <div className="space-y-3 rounded-2xl border border-lime/40 bg-bone p-4">
+            <div className="text-sm font-semibold text-midnight">Add a dog</div>
             <Field label="Name">
               <input
                 className={inputCls}
@@ -123,8 +123,8 @@ export default function RequestWalk() {
                     onClick={() => setNewDog({ ...newDog, size: s })}
                     className={`rounded-xl border px-3 py-2 text-sm capitalize ${
                       newDog.size === s
-                        ? "border-brand-500 bg-white text-brand-800"
-                        : "border-ink-100 bg-white"
+                        ? "border-midnight bg-white text-midnight"
+                        : "border-paper bg-white"
                     }`}
                   >
                     {s}
@@ -146,16 +146,16 @@ export default function RequestWalk() {
                   onClick={() => setDogId(d.id)}
                   className={`flex items-center gap-3 rounded-xl border p-3 text-left ${
                     dogId === d.id
-                      ? "border-brand-500 bg-brand-50"
-                      : "border-ink-100 bg-white"
+                      ? "border-midnight bg-bone"
+                      : "border-paper bg-white"
                   }`}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-paper">
                     🐕
                   </div>
                   <div>
                     <div className="text-sm font-semibold">{d.name}</div>
-                    <div className="text-xs text-ink-500">
+                    <div className="text-xs text-stone">
                       {d.breed || "Mixed"} · {d.size || "medium"}
                     </div>
                   </div>
@@ -164,7 +164,7 @@ export default function RequestWalk() {
               <button
                 type="button"
                 onClick={() => setShowAddDog(true)}
-                className="rounded-xl border border-dashed border-ink-100 bg-white p-3 text-sm text-ink-500"
+                className="rounded-xl border border-dashed border-paper bg-white p-3 text-sm text-stone"
               >
                 + Add another dog
               </button>
@@ -206,8 +206,8 @@ export default function RequestWalk() {
                 onClick={() => setDuration(d)}
                 className={`rounded-xl border px-2 py-3 text-sm font-semibold ${
                   duration === d
-                    ? "border-brand-500 bg-brand-50 text-brand-800"
-                    : "border-ink-100 bg-white"
+                    ? "border-midnight bg-bone text-midnight"
+                    : "border-paper bg-white"
                 }`}
               >
                 {d} min
@@ -216,12 +216,12 @@ export default function RequestWalk() {
           </div>
         </Field>
 
-        <div className="rounded-xl bg-ink-100 p-4">
+        <div className="rounded-xl bg-paper p-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-ink-700">Price</span>
+            <span className="text-sm text-midnight">Price</span>
             <span className="text-xl font-bold">AED {priceFor(duration)}</span>
           </div>
-          <div className="mt-1 text-xs text-ink-500">
+          <div className="mt-1 text-xs text-stone">
             Payment on completion. Demo mode — no real charge.
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function RequestWalk() {
         )}
       </form>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-ink-100 bg-white px-5 py-3">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-white px-5 py-3">
         <Button
           type="button"
           onClick={(() => {

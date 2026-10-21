@@ -62,13 +62,13 @@ export default function OwnerWalkDetail() {
     return (
       <main className="min-h-screen">
         <Header title="Walk" back="/owner" />
-        <div className="p-8 text-center text-ink-500">
+        <div className="p-8 text-center text-stone">
           This walk doesn&apos;t exist or isn&apos;t yours.
         </div>
       </main>
     );
   }
-  if (!walk) return <div className="p-8 text-center text-ink-500">Loading…</div>;
+  if (!walk) return <div className="p-8 text-center text-stone">Loading…</div>;
 
   const canCancel = walk.status === "pending";
 
@@ -86,7 +86,7 @@ export default function OwnerWalkDetail() {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs uppercase tracking-wide text-ink-500">Status</div>
+              <div className="text-xs uppercase tracking-wide text-stone">Status</div>
               <div className="mt-1 text-lg font-semibold capitalize">
                 {walk.status === "in_progress" ? "Walking now" : walk.status}
               </div>
@@ -126,38 +126,38 @@ export default function OwnerWalkDetail() {
                     className="h-14 w-14 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-2xl">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-paper text-2xl">
                     🚶
                   </div>
                 )}
                 <div className="flex-1">
                   <div className="font-semibold">{walk.walker_name}</div>
-                  <div className="mt-0.5 text-xs text-ink-500">
+                  <div className="mt-0.5 text-xs text-stone">
                     {walkerProfile?.rating_avg
                       ? `★ ${walkerProfile.rating_avg} · ${walkerProfile.rating_count} reviews`
                       : "No reviews yet"}
                     {walkerProfile?.id_verified && <> · ✓ Verified</>}
                   </div>
                 </div>
-                <div className="text-ink-300">→</div>
+                <div className="text-chalk">→</div>
               </div>
             </Card>
           </Link>
         )}
 
         {walk.status === "in_progress" && (
-          <Card className="border-brand-300">
+          <Card className="border-midnight">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-brand-700">Live walk</div>
+              <div className="text-sm font-semibold text-midnight">Live walk</div>
               <span className="flex items-center gap-1 text-xs text-emerald-700">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                 Live
               </span>
             </div>
-            <div className="mt-3 flex h-40 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+            <div className="mt-3 flex h-40 items-center justify-center rounded-xl bg-paper text-midnight">
               🗺️ Map preview (real GPS wires up in v1)
             </div>
-            <div className="mt-3 text-sm text-ink-700">
+            <div className="mt-3 text-sm text-midnight">
               <strong>{walk.photo_count || 0}</strong> photos received
             </div>
           </Card>
@@ -166,7 +166,7 @@ export default function OwnerWalkDetail() {
         {walk.status === "completed" && (
           <Card>
             <div className="text-sm font-semibold">All done — thanks!</div>
-            <div className="mt-2 text-sm text-ink-500">
+            <div className="mt-2 text-sm text-stone">
               {walk.walker_name} finished walking {walk.dog_name} at{" "}
               {fmtTime(walk.ended_at)}. In the real app, your card is charged
               AED {walk.price_aed} now.
@@ -177,28 +177,28 @@ export default function OwnerWalkDetail() {
         <Card>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <div className="text-xs text-ink-500">Dog</div>
+              <div className="text-xs text-stone">Dog</div>
               <div className="font-semibold">{walk.dog_name}</div>
-              <div className="text-ink-500">{walk.dog_breed}</div>
+              <div className="text-stone">{walk.dog_breed}</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Area</div>
+              <div className="text-xs text-stone">Area</div>
               <div className="font-semibold">{walk.area}</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Duration</div>
+              <div className="text-xs text-stone">Duration</div>
               <div className="font-semibold">{walk.duration_min} min</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Price</div>
+              <div className="text-xs text-stone">Price</div>
               <div className="font-semibold">AED {walk.price_aed}</div>
             </div>
             <div className="col-span-2">
-              <div className="text-xs text-ink-500">Address</div>
+              <div className="text-xs text-stone">Address</div>
               <div className="font-medium">{walk.address}</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Requested</div>
+              <div className="text-xs text-stone">Requested</div>
               <div className="font-semibold">{fmtTime(walk.created_at)}</div>
             </div>
           </div>

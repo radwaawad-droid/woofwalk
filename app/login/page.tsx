@@ -29,7 +29,7 @@ export default function LoginPage() {
       const p = await getMyProfile();
       if (!p) {
         setErr(
-          "Signed in, but no profile was found. Please sign up again — this account exists in auth but not in the profiles table.",
+          "Signed in, but no profile found. Please sign up again — this account exists in auth but not in profiles.",
         );
         return;
       }
@@ -42,9 +42,18 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen">
-      <Header title="Log in" back="/" />
-      <form onSubmit={onSubmit} className="space-y-4 px-5 py-6">
+    <main className="min-h-screen pb-28">
+      <Header title="" back="/" />
+      <section className="px-5 pt-2">
+        <h1 className="font-serif text-3xl leading-tight tracking-tightest">
+          Welcome back.
+        </h1>
+        <p className="mt-2 text-sm text-midnight/70">
+          Log in to pick up where you left off.
+        </p>
+      </section>
+
+      <form onSubmit={onSubmit} className="space-y-5 px-5 py-6">
         <Field label="Email">
           <input
             type="email"
@@ -69,24 +78,30 @@ export default function LoginPage() {
         </Field>
 
         {err && (
-          <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{err}</div>
+          <div className="rounded-xl border border-clay/40 bg-bone p-3 text-sm text-clay">
+            {err}
+          </div>
         )}
+      </form>
 
-        <Button type="submit" disabled={loading}>
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-bone px-5 py-3">
+        <Button
+          type="button"
+          onClick={() =>
+            (document.querySelector("form") as HTMLFormElement)?.requestSubmit()
+          }
+          disabled={loading}
+        >
           {loading ? "Signing in…" : "Log in"}
         </Button>
+      </nav>
 
-        <div className="pt-4 text-center text-sm text-ink-500">
-          New here?{" "}
-          <Link href="/signup?role=owner" className="font-semibold text-brand-600">
-            Sign up as owner
-          </Link>{" "}
-          or{" "}
-          <Link href="/signup?role=walker" className="font-semibold text-brand-600">
-            as a walker
-          </Link>
-        </div>
-      </form>
+      <p className="px-5 pt-4 text-center text-sm text-stone">
+        New here?{" "}
+        <Link href="/signup" className="font-medium text-midnight underline underline-offset-2">
+          Create an account
+        </Link>
+      </p>
     </main>
   );
 }

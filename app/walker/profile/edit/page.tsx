@@ -113,7 +113,7 @@ export default function WalkerProfileEdit() {
   }
 
   if (!profile) {
-    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+    return <div className="p-8 text-center text-stone">Loading…</div>;
   }
 
   return (
@@ -130,7 +130,7 @@ export default function WalkerProfileEdit() {
               className="h-20 w-20 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-100 text-3xl">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-paper text-3xl">
               🚶
             </div>
           )}
@@ -145,12 +145,12 @@ export default function WalkerProfileEdit() {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="rounded-xl bg-brand-100 px-4 py-2 text-sm font-semibold text-brand-800"
+              className="rounded-xl bg-paper px-4 py-2 text-sm font-semibold text-midnight"
               disabled={uploading}
             >
               {uploading ? "Uploading…" : photoUrl ? "Change photo" : "Add photo"}
             </button>
-            <p className="mt-1 text-xs text-ink-500">
+            <p className="mt-1 text-xs text-stone">
               A clear face photo helps owners trust you.
             </p>
           </div>
@@ -221,8 +221,8 @@ export default function WalkerProfileEdit() {
                 onClick={() => setLangs(toggle(langs, l))}
                 className={`rounded-full border px-3 py-1 text-sm ${
                   langs.includes(l)
-                    ? "border-brand-500 bg-brand-50 text-brand-800"
-                    : "border-ink-100 bg-white text-ink-700"
+                    ? "border-midnight bg-bone text-midnight"
+                    : "border-paper bg-white text-midnight"
                 }`}
               >
                 {l}
@@ -254,8 +254,8 @@ export default function WalkerProfileEdit() {
                 onClick={() => setAreas(toggle(areas, a))}
                 className={`rounded-full border px-3 py-1 text-sm ${
                   areas.includes(a)
-                    ? "border-brand-500 bg-brand-50 text-brand-800"
-                    : "border-ink-100 bg-white text-ink-700"
+                    ? "border-midnight bg-bone text-midnight"
+                    : "border-paper bg-white text-midnight"
                 }`}
               >
                 {a}
@@ -274,7 +274,7 @@ export default function WalkerProfileEdit() {
         )}
       </form>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-ink-100 bg-white px-5 py-3">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-white px-5 py-3">
         <Button
           type="button"
           onClick={() => (document.querySelector("form") as HTMLFormElement)?.requestSubmit()}

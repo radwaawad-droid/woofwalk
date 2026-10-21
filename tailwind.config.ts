@@ -8,28 +8,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50:  "#fdf7f0",
-          100: "#faeadb",
-          200: "#f3d2b1",
-          300: "#eab380",
-          400: "#e0914f",
-          500: "#d4722a",
-          600: "#b65a20",
-          700: "#92451e",
-          800: "#74391e",
-          900: "#5e301b",
-        },
-        ink: {
-          900: "#1b1a17",
-          700: "#3d3a34",
-          500: "#6d685e",
-          300: "#aba497",
-          100: "#eeeae2",
-        },
+        bone:     "#F6F1E7",   // page background
+        paper:    "#EFE6D1",   // hairline rules, subtle surfaces
+        midnight: "#0E1C2F",   // primary text, dark surfaces
+        night:    "#1F2E42",   // raised dark surfaces
+        stone:    "#8A7F6A",   // muted secondary text
+        chalk:    "#D7CFBD",   // disabled / subtle borders
+        lime:     "#D8E86B",   // the one accent
+        clay:     "#C14A2E",   // errors only
+        emerald2: "#2F7D63",   // success / verified
+        amber2:   "#A6701F",   // warnings / pending
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto"],
+        serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        sans:  ['"Instrument Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto'],
+      },
+      letterSpacing: {
+        tightest: '-0.04em',
       },
     },
   },

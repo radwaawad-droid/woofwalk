@@ -44,12 +44,12 @@ export default function WalkerPublicProfile() {
     })();
   }, [params.id]);
 
-  if (loading) return <div className="p-8 text-center text-ink-500">Loading…</div>;
+  if (loading) return <div className="p-8 text-center text-stone">Loading…</div>;
   if (missing || !p) {
     return (
       <main className="min-h-screen">
         <Header title="Walker" back="/" />
-        <div className="p-8 text-center text-ink-500">Walker not found.</div>
+        <div className="p-8 text-center text-stone">Walker not found.</div>
       </main>
     );
   }
@@ -68,19 +68,19 @@ export default function WalkerPublicProfile() {
               className="h-28 w-28 rounded-full object-cover shadow"
             />
           ) : (
-            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-brand-100 text-5xl shadow">
+            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-paper text-5xl shadow">
               🚶
             </div>
           )}
           <h1 className="mt-3 text-xl font-bold">{p.name}</h1>
-          <div className="mt-1 text-sm text-ink-500">
+          <div className="mt-1 text-sm text-stone">
             {wp?.rating_avg
               ? `★ ${wp.rating_avg} · ${wp.rating_count} review${wp.rating_count === 1 ? "" : "s"}`
               : "No reviews yet"}
             {wp?.id_verified && <> · <span className="text-emerald-700">✓ Verified</span></>}
           </div>
           {p.area && (
-            <div className="mt-1 text-sm text-ink-500">Based in {p.area}</div>
+            <div className="mt-1 text-sm text-stone">Based in {p.area}</div>
           )}
           {wp?.hourly_rate_aed && (
             <div className="mt-2 text-sm font-semibold">
@@ -91,10 +91,10 @@ export default function WalkerPublicProfile() {
 
         {wp?.bio && (
           <Card>
-            <div className="text-xs uppercase tracking-wide text-ink-500">
+            <div className="text-xs uppercase tracking-wide text-stone">
               About
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-ink-700">
+            <p className="mt-2 whitespace-pre-wrap text-sm text-midnight">
               {wp.bio}
             </p>
           </Card>
@@ -104,7 +104,7 @@ export default function WalkerPublicProfile() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             {wp?.years_experience != null && (
               <div>
-                <div className="text-xs text-ink-500">Experience</div>
+                <div className="text-xs text-stone">Experience</div>
                 <div className="font-semibold">
                   {wp.years_experience} year{wp.years_experience === 1 ? "" : "s"}
                 </div>
@@ -112,14 +112,14 @@ export default function WalkerPublicProfile() {
             )}
             {wp?.languages && wp.languages.length > 0 && (
               <div>
-                <div className="text-xs text-ink-500">Languages</div>
+                <div className="text-xs text-stone">Languages</div>
                 <div className="font-semibold">{wp.languages.join(", ")}</div>
               </div>
             )}
           </div>
           {wp?.areas_served && wp.areas_served.length > 0 && (
             <div className="mt-3">
-              <div className="text-xs text-ink-500">Areas served</div>
+              <div className="text-xs text-stone">Areas served</div>
               <div className="mt-2 flex flex-wrap gap-1">
                 {wp.areas_served.map((a) => (
                   <Badge key={a} tone="info">
@@ -134,7 +134,7 @@ export default function WalkerPublicProfile() {
         <div>
           <h2 className="mb-2 font-semibold">Reviews</h2>
           {reviews.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-ink-100 bg-brand-50 p-6 text-center text-sm text-ink-500">
+            <div className="rounded-xl border border-dashed border-paper bg-bone p-6 text-center text-sm text-stone">
               No reviews yet — this walker is new.
             </div>
           ) : (
@@ -144,16 +144,16 @@ export default function WalkerPublicProfile() {
                   <div className="flex items-center justify-between">
                     <div className="font-semibold">
                       {"★".repeat(r.rating)}
-                      <span className="text-ink-300">
+                      <span className="text-chalk">
                         {"★".repeat(5 - r.rating)}
                       </span>
                     </div>
-                    <div className="text-xs text-ink-500">
+                    <div className="text-xs text-stone">
                       {new Date(r.created_at).toLocaleDateString()}
                     </div>
                   </div>
                   {r.comment && (
-                    <p className="mt-2 text-sm text-ink-700">{r.comment}</p>
+                    <p className="mt-2 text-sm text-midnight">{r.comment}</p>
                   )}
                 </Card>
               ))}

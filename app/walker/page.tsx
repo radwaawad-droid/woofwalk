@@ -14,7 +14,7 @@ import {
   WalkerProfile,
   WalkWithRefs,
 } from "@/lib/db";
-import { Badge, Button, Card, Empty, Header } from "@/components/UI";
+import { Badge, Card, Empty, Header, PawIcon, Wordmark } from "@/components/UI";
 
 function timeAgo(ts: string) {
   const mins = Math.max(1, Math.floor((Date.now() - new Date(ts).getTime()) / 60000));
@@ -45,9 +45,7 @@ export default function WalkerHome() {
       setOpen(o);
       setActive(a);
       setCompleted(c);
-    } catch (e) {
-      /* ignore */
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -78,163 +76,190 @@ export default function WalkerHome() {
   }, [profile, filterArea]);
 
   if (loading || !profile) {
-    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-stone">
+        Loading
+      </div>
+    );
   }
 
   const earnings = completed.reduce((sum, w) => sum + w.price_aed, 0);
   const profileComplete = !!(walkerProfile?.photo_url && walkerProfile?.bio);
 
   return (
-    <main className="min-h-screen pb-6">
+    <main className="min-h-screen pb-10">
       <Header
-        title={`Hi, ${profile.name.split(" ")[0]}`}
+        title=""
         right={
-          <button
-            onClick={async () => {
-              await signOut();
-              router.replace("/");
-            }}
-            className="text-xs font-medium text-ink-500"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-3">
+            <Wordmark className="opacity-80" />
+            <button
+              onClick={async () => {
+                await signOut();
+                router.replace("/");
+              }}
+              className="text-xs text-stone hover:text-midnight"
+            >
+              Sign out
+            </button>
+          </div>
         }
       />
 
-      <section className="space-y-4 px-5 py-5">
+      <section className="px-5 pt-4">
+        <p className="text-sm text-stone">Welcome,</p>
+        <h1 className="font-serif text-3xl leading-tight tracking-tightest">
+          {profile.name.split(" ")[0]}.
+        </h1>
+      </section>
+
+      <section className="space-y-4 px-5 py-6">
         {!profileComplete && (
           <Link href="/walker/profile/edit">
-            <Card className="border-amber-300 bg-amber-50">
-              <div className="flex items-center justify-between">
+            <Card tone="warn">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                  <div className="text-xs uppercase tracking-wider text-amber2">
                     Finish your profile
                   </div>
-                  <div className="mt-1 text-sm text-amber-900">
+                  <div className="mt-1.5 text-sm text-midnight">
                     Owners book walkers they can see. Add a photo and a short
                     bio.
                   </div>
                 </div>
-                <div className="text-xl">→</div>
+                <PawIcon className="h-5 w-5 text-midnight/60" />
               </div>
             </Card>
           </Link>
         )}
 
-        <Card className="bg-gradient-to-br from-brand-500 to-brand-700 text-white">
-          <div className="text-xs uppercase tracking-wide text-brand-100">
-            Earnings
-          </div>
-          <div className="mt-1 text-3xl font-bold">AED {earnings}</div>
-          <div className="mt-1 text-sm text-brand-100">
-            {completed.length} walk{completed.length === 1 ? "" : "s"} completed
+        <Card tone="dark">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-lime">
+                Earnings
+              </div>
+              <div className="mt-2 font-serif text-4xl tracking-tightest">
+                AED {earnings}
+              </div>
+              <div className="mt-1 text-sm text-bone/70">
+                {completed.length} walk{completed.length === 1 ? "" : "s"} completed
+              </div>
+            </div>
           </div>
         </Card>
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <Link
             href="/walker/profile/edit"
-            className="flex-1 rounded-xl border border-ink-100 bg-white p-3 text-center text-sm font-semibold"
+            className="rounded-full border border-midnight bg-bone py-3 text-center text-sm font-medium text-midnight transition hover:bg-midnight hover:text-bone"
           >
             Edit profile
           </Link>
           <Link
             href={`/walker-profile/${profile.id}`}
-            className="flex-1 rounded-xl border border-ink-100 bg-white p-3 text-center text-sm font-semibold"
+            className="rounded-full border border-paper bg-bone py-3 text-center text-sm font-medium text-midnight transition hover:border-midnight"
           >
-            Preview profile
+            Preview
           </Link>
         </div>
 
         {active && (
           <Link href={`/walker/walk/${active.id}`}>
-            <Card className="border-brand-300 bg-brand-50">
+            <Card tone="accent">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-wide text-brand-700">
+                  <div className="text-xs uppercase tracking-wider text-midnight/70">
                     {active.status === "in_progress"
-                      ? "Walk in progress"
+                      ? "Walking now"
                       : "You accepted a walk"}
                   </div>
-                  <div className="mt-1 font-semibold">
+                  <div className="mt-1.5 font-serif text-lg text-midnight">
                     {active.dog_name} · {active.area}
                   </div>
-                  <div className="mt-0.5 text-sm text-ink-500">
+                  <div className="mt-0.5 text-sm text-midnight/70">
                     {active.duration_min} min · AED {active.price_aed}
                   </div>
                 </div>
-                <div className="text-xl">→</div>
+                <PawIcon className="h-6 w-6 text-midnight" />
               </div>
             </Card>
           </Link>
         )}
 
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold">Open requests</h2>
-          <label className="flex items-center gap-2 text-xs text-ink-500">
+        <div className="flex items-baseline justify-between pt-2">
+          <h2 className="font-serif text-lg">Open requests</h2>
+          <label className="flex items-center gap-2 text-xs text-stone">
             <input
               type="checkbox"
               checked={filterArea}
               onChange={(e) => setFilterArea(e.target.checked)}
+              className="accent-midnight"
             />
-            My area only ({profile.area})
+            {profile.area} only
           </label>
         </div>
 
         {open.length === 0 ? (
           <Empty
-            title="No requests right now"
+            title="Quiet right now"
             body="New walk requests in your area will show up here. Keep this page open."
           />
         ) : (
-          <div className="space-y-2">
+          <ul className="divide-y divide-paper rounded-2xl border border-paper">
             {open.map((w) => (
-              <Link key={w.id} href={`/walker/walk/${w.id}`}>
-                <Card>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">
-                        {w.dog_name}{" "}
-                        <span className="text-sm font-normal text-ink-500">
-                          · {w.dog_breed || "Mixed"}
-                        </span>
-                      </div>
-                      <div className="mt-0.5 text-sm text-ink-500">
-                        {w.area} · {w.duration_min} min
-                      </div>
-                      <div className="mt-1 text-xs text-ink-500">
-                        {timeAgo(w.created_at)}
-                      </div>
+              <li key={w.id}>
+                <Link
+                  href={`/walker/walk/${w.id}`}
+                  className="flex items-start justify-between gap-3 px-4 py-4 transition hover:bg-paper/40"
+                >
+                  <div>
+                    <div className="font-medium">
+                      {w.dog_name}{" "}
+                      <span className="font-normal text-stone">
+                        · {w.dog_breed || "Mixed"}
+                      </span>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold">AED {w.price_aed}</div>
-                      <Badge tone="warn">New</Badge>
+                    <div className="mt-0.5 text-xs text-stone">
+                      {w.area} · {w.duration_min} min
+                    </div>
+                    <div className="mt-1 text-xs text-stone/80">
+                      {timeAgo(w.created_at)}
                     </div>
                   </div>
-                </Card>
-              </Link>
+                  <div className="text-right">
+                    <div className="font-serif text-lg tracking-tightest">
+                      AED {w.price_aed}
+                    </div>
+                    <Badge tone="accent">New</Badge>
+                  </div>
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
 
         {completed.length > 0 && (
-          <div className="pt-2">
-            <h2 className="mb-2 font-semibold">Completed</h2>
-            <div className="space-y-2">
+          <div className="pt-4">
+            <h2 className="mb-3 font-serif text-lg">Completed</h2>
+            <ul className="divide-y divide-paper rounded-2xl border border-paper">
               {completed.slice(0, 5).map((w) => (
-                <Card key={w.id}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold">{w.dog_name}</div>
-                      <div className="text-xs text-ink-500">
-                        {w.area} · {w.duration_min} min
-                      </div>
+                <li
+                  key={w.id}
+                  className="flex items-center justify-between px-4 py-3"
+                >
+                  <div>
+                    <div className="font-medium">{w.dog_name}</div>
+                    <div className="text-xs text-stone">
+                      {w.area} · {w.duration_min} min
                     </div>
-                    <div className="font-semibold">AED {w.price_aed}</div>
                   </div>
-                </Card>
+                  <div className="font-serif tracking-tightest">
+                    AED {w.price_aed}
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
       </section>
