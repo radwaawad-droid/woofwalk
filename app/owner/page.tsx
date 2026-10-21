@@ -4,17 +4,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  getUser,
-  getDogs,
-  getWalksForOwner,
-  signOut,
-  WalkRequest,
   Dog,
-  User,
-} from "@/lib/store";
+  getMyDogs,
+  getMyOwnerWalks,
+  getMyProfile,
+  Profile,
+  signOut,
+  WalkWithRefs,
+} from "@/lib/db";
 import { Badge, Button, Card, Empty, Header } from "@/components/UI";
 
-function statusTone(s: WalkRequest["status"]) {
+function statusTone(s: WalkWithRefs["status"]) {
   if (s === "pending") return "warn" as const;
   if (s === "accepted") return "info" as const;
   if (s === "in_progress") return "info" as const;
@@ -22,13 +22,13 @@ function statusTone(s: WalkRequest["status"]) {
   return "neutral" as const;
 }
 
-function statusLabel(s: WalkRequest["status"]) {
+function statusLabel(s: WalkWithRefs["status"]) {
   if (s === "in_progress") return "Walking now";
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function timeAgo(ts: number) {
-  const mins = Math.max(1, Math.floor((Date.now() - ts) / 60000));
+function timeAgo(ts: string) {
+  const mins = Math.max(1, Math.floor((Date.now() - new Date(ts).getTime()) / 60000));
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
@@ -37,28 +37,43 @@ function timeAgo(ts: number) {
 
 export default function OwnerHome() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [dogs, setDogs] = useState<Dog[]>([]);
-  const [walks, setWalks] = useState<WalkRequest[]>([]);
+  const [walks, setWalks] = useState<WalkWithRefs[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function refresh() {
+    try {
+      const [d, w] = await Promise.all([getMyDogs(), getMyOwnerWalks()]);
+      setDogs(d);
+      setWalks(w);
+    } catch (e) {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
-    const u = getUser();
-    if (!u) {
-      router.replace("/");
-      return;
-    }
-    if (u.role !== "owner") {
-      router.replace("/walker");
-      return;
-    }
-    setUser(u);
-    setDogs(getDogs(u.id));
-    setWalks(getWalksForOwner(u.id));
-    const int = setInterval(() => setWalks(getWalksForOwner(u.id)), 2000);
+    (async () => {
+      const p = await getMyProfile();
+      if (!p) {
+        router.replace("/");
+        return;
+      }
+      if (p.role !== "owner") {
+        router.replace("/walker");
+        return;
+      }
+      setProfile(p);
+      await refresh();
+      setLoading(false);
+    })();
+    const int = setInterval(refresh, 3000);
     return () => clearInterval(int);
   }, [router]);
 
-  if (!user) return null;
+  if (loading || !profile) {
+    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+  }
 
   const active = walks.find(
     (w) => w.status === "accepted" || w.status === "in_progress",
@@ -67,11 +82,11 @@ export default function OwnerHome() {
   return (
     <main className="min-h-screen pb-24">
       <Header
-        title={`Hi, ${user.name.split(" ")[0]}`}
+        title={`Hi, ${profile.name.split(" ")[0]}`}
         right={
           <button
-            onClick={() => {
-              signOut();
+            onClick={async () => {
+              await signOut();
               router.replace("/");
             }}
             className="text-xs font-medium text-ink-500"
@@ -91,10 +106,10 @@ export default function OwnerHome() {
                     Walk in progress
                   </div>
                   <div className="mt-1 font-semibold">
-                    {active.walkerName} is walking {active.dogName}
+                    {active.walker_name || "Walker"} is walking {active.dog_name}
                   </div>
                   <div className="mt-0.5 text-sm text-ink-500">
-                    {active.area} · {active.durationMin} min
+                    {active.area} · {active.duration_min} min
                   </div>
                 </div>
                 <div className="text-xl">→</div>
@@ -105,10 +120,7 @@ export default function OwnerHome() {
 
         <div className="flex items-center justify-between">
           <h2 className="font-semibold">Your dogs</h2>
-          <Link
-            href="/owner/request"
-            className="text-sm font-semibold text-brand-600"
-          >
+          <Link href="/owner/request" className="text-sm font-semibold text-brand-600">
             + Request walk
           </Link>
         </div>
@@ -137,7 +149,7 @@ export default function OwnerHome() {
                   <div className="flex-1">
                     <div className="font-semibold">{d.name}</div>
                     <div className="text-sm text-ink-500">
-                      {d.breed} · {d.size}
+                      {d.breed || "Mixed"} · {d.size || "medium"}
                     </div>
                   </div>
                 </div>
@@ -159,17 +171,15 @@ export default function OwnerHome() {
                   <Card>
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <div className="font-semibold">{w.dogName}</div>
+                        <div className="font-semibold">{w.dog_name}</div>
                         <div className="mt-0.5 text-sm text-ink-500">
-                          {w.area} · {w.durationMin} min · AED {w.priceAed}
+                          {w.area} · {w.duration_min} min · AED {w.price_aed}
                         </div>
                         <div className="mt-1 text-xs text-ink-500">
-                          {timeAgo(w.createdAt)}
+                          {timeAgo(w.created_at)}
                         </div>
                       </div>
-                      <Badge tone={statusTone(w.status)}>
-                        {statusLabel(w.status)}
-                      </Badge>
+                      <Badge tone={statusTone(w.status)}>{statusLabel(w.status)}</Badge>
                     </div>
                   </Card>
                 </Link>
@@ -180,9 +190,7 @@ export default function OwnerHome() {
       </section>
 
       <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-ink-100 bg-white px-5 py-3">
-        <Button onClick={() => router.push("/owner/request")}>
-          Request a walk
-        </Button>
+        <Button onClick={() => router.push("/owner/request")}>Request a walk</Button>
       </nav>
     </main>
   );

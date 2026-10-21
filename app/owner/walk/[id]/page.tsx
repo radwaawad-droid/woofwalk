@@ -1,13 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getUser, getWalk, updateWalk, WalkRequest } from "@/lib/store";
+import {
+  cancelWalk,
+  getMyProfile,
+  getWalk,
+  getWalkerProfile,
+  WalkerProfile,
+  WalkWithRefs,
+} from "@/lib/db";
 import { Badge, Button, Card, Header } from "@/components/UI";
 
-function fmtTime(ms?: number) {
-  if (!ms) return "—";
-  return new Date(ms).toLocaleTimeString("en-GB", {
+function fmtTime(ts?: string | null) {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -16,34 +24,57 @@ function fmtTime(ms?: number) {
 export default function OwnerWalkDetail() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const [walk, setWalk] = useState<WalkRequest | null>(null);
+  const [walk, setWalk] = useState<WalkWithRefs | null>(null);
+  const [walkerProfile, setWalkerProfile] = useState<WalkerProfile | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    const u = getUser();
-    if (!u || u.role !== "owner") {
-      router.replace("/");
-      return;
-    }
-    const w = getWalk(params.id);
-    if (!w || w.ownerId !== u.id) {
-      router.replace("/owner");
-      return;
-    }
-    setWalk(w);
-    const int = setInterval(() => {
-      const latest = getWalk(params.id);
-      if (latest) setWalk({ ...latest });
-    }, 1500);
-    return () => clearInterval(int);
+    (async () => {
+      const me = await getMyProfile();
+      if (!me || me.role !== "owner") {
+        router.replace("/");
+        return;
+      }
+      const w = await getWalk(params.id);
+      if (!w || w.owner_id !== me.id) {
+        setNotFound(true);
+        return;
+      }
+      setWalk(w);
+    })();
   }, [params.id, router]);
 
-  if (!walk) return null;
+  useEffect(() => {
+    const int = setInterval(async () => {
+      const w = await getWalk(params.id);
+      if (w) setWalk(w);
+    }, 2000);
+    return () => clearInterval(int);
+  }, [params.id]);
+
+  useEffect(() => {
+    if (walk?.walker_id && !walkerProfile) {
+      getWalkerProfile(walk.walker_id).then(setWalkerProfile).catch(() => {});
+    }
+  }, [walk?.walker_id, walkerProfile]);
+
+  if (notFound) {
+    return (
+      <main className="min-h-screen">
+        <Header title="Walk" back="/owner" />
+        <div className="p-8 text-center text-ink-500">
+          This walk doesn&apos;t exist or isn&apos;t yours.
+        </div>
+      </main>
+    );
+  }
+  if (!walk) return <div className="p-8 text-center text-ink-500">Loading…</div>;
 
   const canCancel = walk.status === "pending";
 
-  function cancel() {
+  async function doCancel() {
     if (!walk) return;
-    updateWalk(walk.id, { status: "cancelled" });
+    await cancelWalk(walk.id);
     router.replace("/owner");
   }
 
@@ -55,9 +86,7 @@ export default function OwnerWalkDetail() {
         <Card>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-xs uppercase tracking-wide text-ink-500">
-                Status
-              </div>
+              <div className="text-xs uppercase tracking-wide text-ink-500">Status</div>
               <div className="mt-1 text-lg font-semibold capitalize">
                 {walk.status === "in_progress" ? "Walking now" : walk.status}
               </div>
@@ -85,18 +114,41 @@ export default function OwnerWalkDetail() {
           </div>
         )}
 
-        {walk.status === "accepted" && (
-          <div className="rounded-xl bg-brand-50 p-4 text-sm text-brand-900">
-            {walk.walkerName} is on the way to pick up {walk.dogName}.
-          </div>
+        {walk.walker_id && (
+          <Link href={`/walker-profile/${walk.walker_id}`}>
+            <Card>
+              <div className="flex items-center gap-3">
+                {walkerProfile?.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={walkerProfile.photo_url}
+                    alt={walk.walker_name || "Walker"}
+                    className="h-14 w-14 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-2xl">
+                    🚶
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="font-semibold">{walk.walker_name}</div>
+                  <div className="mt-0.5 text-xs text-ink-500">
+                    {walkerProfile?.rating_avg
+                      ? `★ ${walkerProfile.rating_avg} · ${walkerProfile.rating_count} reviews`
+                      : "No reviews yet"}
+                    {walkerProfile?.id_verified && <> · ✓ Verified</>}
+                  </div>
+                </div>
+                <div className="text-ink-300">→</div>
+              </div>
+            </Card>
+          </Link>
         )}
 
         {walk.status === "in_progress" && (
           <Card className="border-brand-300">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-brand-700">
-                Live walk
-              </div>
+              <div className="text-sm font-semibold text-brand-700">Live walk</div>
               <span className="flex items-center gap-1 text-xs text-emerald-700">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                 Live
@@ -106,7 +158,7 @@ export default function OwnerWalkDetail() {
               🗺️ Map preview (real GPS wires up in v1)
             </div>
             <div className="mt-3 text-sm text-ink-700">
-              <strong>{walk.photoCount || 0}</strong> photos received
+              <strong>{walk.photo_count || 0}</strong> photos received
             </div>
           </Card>
         )}
@@ -115,9 +167,9 @@ export default function OwnerWalkDetail() {
           <Card>
             <div className="text-sm font-semibold">All done — thanks!</div>
             <div className="mt-2 text-sm text-ink-500">
-              {walk.walkerName} finished walking {walk.dogName} at{" "}
-              {fmtTime(walk.endedAt)}. In the real app, your card is charged
-              AED {walk.priceAed} now.
+              {walk.walker_name} finished walking {walk.dog_name} at{" "}
+              {fmtTime(walk.ended_at)}. In the real app, your card is charged
+              AED {walk.price_aed} now.
             </div>
           </Card>
         )}
@@ -126,14 +178,8 @@ export default function OwnerWalkDetail() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <div className="text-xs text-ink-500">Dog</div>
-              <div className="font-semibold">{walk.dogName}</div>
-              <div className="text-ink-500">{walk.dogBreed}</div>
-            </div>
-            <div>
-              <div className="text-xs text-ink-500">Walker</div>
-              <div className="font-semibold">
-                {walk.walkerName || "Not yet"}
-              </div>
+              <div className="font-semibold">{walk.dog_name}</div>
+              <div className="text-ink-500">{walk.dog_breed}</div>
             </div>
             <div>
               <div className="text-xs text-ink-500">Area</div>
@@ -141,25 +187,25 @@ export default function OwnerWalkDetail() {
             </div>
             <div>
               <div className="text-xs text-ink-500">Duration</div>
-              <div className="font-semibold">{walk.durationMin} min</div>
+              <div className="font-semibold">{walk.duration_min} min</div>
+            </div>
+            <div>
+              <div className="text-xs text-ink-500">Price</div>
+              <div className="font-semibold">AED {walk.price_aed}</div>
             </div>
             <div className="col-span-2">
               <div className="text-xs text-ink-500">Address</div>
               <div className="font-medium">{walk.address}</div>
             </div>
             <div>
-              <div className="text-xs text-ink-500">Price</div>
-              <div className="font-semibold">AED {walk.priceAed}</div>
-            </div>
-            <div>
               <div className="text-xs text-ink-500">Requested</div>
-              <div className="font-semibold">{fmtTime(walk.createdAt)}</div>
+              <div className="font-semibold">{fmtTime(walk.created_at)}</div>
             </div>
           </div>
         </Card>
 
         {canCancel && (
-          <Button variant="ghost" onClick={cancel}>
+          <Button variant="ghost" onClick={doCancel}>
             Cancel request
           </Button>
         )}

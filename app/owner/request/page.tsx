@@ -5,27 +5,26 @@ import { useEffect, useState } from "react";
 import {
   addDog,
   createWalk,
-  DUBAI_AREAS,
-  getDogs,
-  getUser,
-  priceFor,
-  User,
   Dog,
-} from "@/lib/store";
+  DUBAI_AREAS,
+  getMyDogs,
+  getMyProfile,
+  priceFor,
+  Profile,
+} from "@/lib/db";
 import { Button, Field, Header, inputCls } from "@/components/UI";
 
 const DURATIONS = [15, 30, 45, 60];
 
 export default function RequestWalk() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [dogId, setDogId] = useState<string>("");
   const [area, setArea] = useState<string>(DUBAI_AREAS[0]);
   const [address, setAddress] = useState<string>("");
   const [duration, setDuration] = useState<number>(30);
 
-  // Inline add-dog
   const [showAddDog, setShowAddDog] = useState(false);
   const [newDog, setNewDog] = useState<{
     name: string;
@@ -33,55 +32,63 @@ export default function RequestWalk() {
     size: "small" | "medium" | "large";
   }>({ name: "", breed: "", size: "medium" });
 
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
   useEffect(() => {
-    const u = getUser();
-    if (!u || u.role !== "owner") {
-      router.replace("/");
-      return;
-    }
-    setUser(u);
-    const ds = getDogs(u.id);
-    setDogs(ds);
-    if (ds[0]) setDogId(ds[0].id);
-    else setShowAddDog(true);
-    if (u.area) setArea(u.area);
+    (async () => {
+      const p = await getMyProfile();
+      if (!p || p.role !== "owner") {
+        router.replace("/");
+        return;
+      }
+      setProfile(p);
+      const ds = await getMyDogs();
+      setDogs(ds);
+      if (ds[0]) setDogId(ds[0].id);
+      else setShowAddDog(true);
+      if (p.area) setArea(p.area);
+    })();
   }, [router]);
 
-  function onAddDog() {
-    if (!user || !newDog.name.trim()) return;
-    const d = addDog({
-      ownerId: user.id,
+  async function onAddDog() {
+    if (!newDog.name.trim()) return;
+    const d = await addDog({
       name: newDog.name.trim(),
       breed: newDog.breed.trim() || "Mixed",
       size: newDog.size,
     });
-    const ds = getDogs(user.id);
+    const ds = await getMyDogs();
     setDogs(ds);
     setDogId(d.id);
     setShowAddDog(false);
     setNewDog({ name: "", breed: "", size: "medium" });
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!user || !dogId || !address.trim()) return;
-    const dog = dogs.find((d) => d.id === dogId);
-    if (!dog) return;
-    const walk = createWalk({
-      ownerId: user.id,
-      ownerName: user.name,
-      dogId: dog.id,
-      dogName: dog.name,
-      dogBreed: dog.breed,
-      area,
-      address: address.trim(),
-      durationMin: duration,
-      priceAed: priceFor(duration),
-    });
-    router.replace(`/owner/walk/${walk.id}`);
+    setErr(null);
+    if (!dogId || !address.trim()) return;
+    setSubmitting(true);
+    try {
+      const walk = await createWalk({
+        dog_id: dogId,
+        area,
+        address: address.trim(),
+        duration_min: duration,
+        price_aed: priceFor(duration),
+      });
+      router.replace(`/owner/walk/${walk.id}`);
+    } catch (e: any) {
+      setErr(e?.message || "Could not create walk.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (!user) return null;
+  if (!profile) {
+    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+  }
 
   return (
     <main className="min-h-screen pb-28">
@@ -149,7 +156,7 @@ export default function RequestWalk() {
                   <div>
                     <div className="text-sm font-semibold">{d.name}</div>
                     <div className="text-xs text-ink-500">
-                      {d.breed} · {d.size}
+                      {d.breed || "Mixed"} · {d.size || "medium"}
                     </div>
                   </div>
                 </button>
@@ -218,6 +225,10 @@ export default function RequestWalk() {
             Payment on completion. Demo mode — no real charge.
           </div>
         </div>
+
+        {err && (
+          <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{err}</div>
+        )}
       </form>
 
       <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-ink-100 bg-white px-5 py-3">
@@ -227,9 +238,9 @@ export default function RequestWalk() {
             const form = document.querySelector("form");
             form?.requestSubmit();
           }) as any}
-          disabled={!dogId || !address.trim() || showAddDog}
+          disabled={!dogId || !address.trim() || showAddDog || submitting}
         >
-          Request walk
+          {submitting ? "Requesting…" : "Request walk"}
         </Button>
       </nav>
     </main>

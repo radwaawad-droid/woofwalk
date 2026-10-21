@@ -4,19 +4,19 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   acceptWalk,
-  addPhoto,
+  bumpPhoto,
   endWalk,
-  getUser,
+  getMyProfile,
   getWalk,
   startWalk,
-  User,
-  WalkRequest,
-} from "@/lib/store";
+  Profile,
+  WalkWithRefs,
+} from "@/lib/db";
 import { Badge, Button, Card, Header } from "@/components/UI";
 
-function fmtTime(ms?: number) {
-  if (!ms) return "—";
-  return new Date(ms).toLocaleTimeString("en-GB", {
+function fmtTime(ts?: string | null) {
+  if (!ts) return "—";
+  return new Date(ts).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -25,53 +25,79 @@ function fmtTime(ms?: number) {
 export default function WalkerWalkDetail() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const [user, setUser] = useState<User | null>(null);
-  const [walk, setWalk] = useState<WalkRequest | null>(null);
+  const [me, setMe] = useState<Profile | null>(null);
+  const [walk, setWalk] = useState<WalkWithRefs | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const u = getUser();
-    if (!u || u.role !== "walker") {
-      router.replace("/");
-      return;
-    }
-    setUser(u);
-    const refresh = () => {
-      const w = getWalk(params.id);
+    (async () => {
+      const p = await getMyProfile();
+      if (!p || p.role !== "walker") {
+        router.replace("/");
+        return;
+      }
+      setMe(p);
+      const w = await getWalk(params.id);
       if (!w) {
         router.replace("/walker");
         return;
       }
-      setWalk({ ...w });
-    };
-    refresh();
-    const int = setInterval(refresh, 1500);
-    return () => clearInterval(int);
+      setWalk(w);
+    })();
   }, [params.id, router]);
 
-  if (!user || !walk) return null;
+  useEffect(() => {
+    const int = setInterval(async () => {
+      const w = await getWalk(params.id);
+      if (w) setWalk(w);
+    }, 2000);
+    return () => clearInterval(int);
+  }, [params.id]);
 
-  const isMine = walk.walkerId === user.id;
+  if (!me || !walk) {
+    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+  }
+
+  const isMine = walk.walker_id === me.id;
   const canAccept = walk.status === "pending";
 
-  function doAccept() {
-    if (!user || !walk) return;
-    acceptWalk(walk.id, user);
-  }
-
-  function doStart() {
+  async function doAccept() {
     if (!walk) return;
-    startWalk(walk.id);
+    setBusy(true);
+    try {
+      await acceptWalk(walk.id);
+      const w = await getWalk(walk.id);
+      setWalk(w);
+    } finally {
+      setBusy(false);
+    }
   }
-
-  function doPhoto() {
+  async function doStart() {
     if (!walk) return;
-    addPhoto(walk.id);
+    setBusy(true);
+    try {
+      await startWalk(walk.id);
+      const w = await getWalk(walk.id);
+      setWalk(w);
+    } finally {
+      setBusy(false);
+    }
   }
-
-  function doEnd() {
+  async function doPhoto() {
     if (!walk) return;
-    endWalk(walk.id);
-    setTimeout(() => router.replace("/walker"), 500);
+    await bumpPhoto(walk.id);
+    const w = await getWalk(walk.id);
+    setWalk(w);
+  }
+  async function doEnd() {
+    if (!walk) return;
+    setBusy(true);
+    try {
+      await endWalk(walk.id);
+      setTimeout(() => router.replace("/walker"), 400);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -85,10 +111,8 @@ export default function WalkerWalkDetail() {
               <div className="text-xs uppercase tracking-wide text-ink-500">
                 Dog
               </div>
-              <div className="mt-1 text-xl font-bold">
-                {walk.dogName}
-              </div>
-              <div className="text-sm text-ink-500">{walk.dogBreed}</div>
+              <div className="mt-1 text-xl font-bold">{walk.dog_name}</div>
+              <div className="text-sm text-ink-500">{walk.dog_breed || "Mixed"}</div>
             </div>
             <Badge
               tone={
@@ -108,11 +132,11 @@ export default function WalkerWalkDetail() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <div className="text-xs text-ink-500">Owner</div>
-              <div className="font-semibold">{walk.ownerName}</div>
+              <div className="font-semibold">{walk.owner_name}</div>
             </div>
             <div>
               <div className="text-xs text-ink-500">Earnings</div>
-              <div className="font-semibold">AED {walk.priceAed}</div>
+              <div className="font-semibold">AED {walk.price_aed}</div>
             </div>
             <div>
               <div className="text-xs text-ink-500">Area</div>
@@ -120,7 +144,7 @@ export default function WalkerWalkDetail() {
             </div>
             <div>
               <div className="text-xs text-ink-500">Duration</div>
-              <div className="font-semibold">{walk.durationMin} min</div>
+              <div className="font-semibold">{walk.duration_min} min</div>
             </div>
             <div className="col-span-2">
               <div className="text-xs text-ink-500">Pickup address</div>
@@ -145,7 +169,7 @@ export default function WalkerWalkDetail() {
             </div>
             <div className="mt-3 flex items-center justify-between text-sm">
               <span>Photos sent</span>
-              <strong>{walk.photoCount || 0}</strong>
+              <strong>{walk.photo_count || 0}</strong>
             </div>
             <div className="mt-2">
               <Button variant="secondary" onClick={doPhoto}>
@@ -156,29 +180,35 @@ export default function WalkerWalkDetail() {
         )}
 
         <div className="text-xs text-ink-500">
-          Requested {fmtTime(walk.createdAt)}
-          {walk.acceptedAt && <> · Accepted {fmtTime(walk.acceptedAt)}</>}
-          {walk.startedAt && <> · Started {fmtTime(walk.startedAt)}</>}
-          {walk.endedAt && <> · Ended {fmtTime(walk.endedAt)}</>}
+          Requested {fmtTime(walk.created_at)}
+          {walk.accepted_at && <> · Accepted {fmtTime(walk.accepted_at)}</>}
+          {walk.started_at && <> · Started {fmtTime(walk.started_at)}</>}
+          {walk.ended_at && <> · Ended {fmtTime(walk.ended_at)}</>}
         </div>
       </section>
 
       <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-ink-100 bg-white px-5 py-3 space-y-2">
-        {canAccept && <Button onClick={doAccept}>Accept walk · AED {walk.priceAed}</Button>}
+        {canAccept && (
+          <Button onClick={doAccept} disabled={busy}>
+            Accept walk · AED {walk.price_aed}
+          </Button>
+        )}
         {walk.status === "accepted" && isMine && (
-          <Button onClick={doStart}>Start walk</Button>
+          <Button onClick={doStart} disabled={busy}>
+            Start walk
+          </Button>
         )}
         {walk.status === "in_progress" && isMine && (
-          <Button variant="danger" onClick={doEnd}>
+          <Button variant="danger" onClick={doEnd} disabled={busy}>
             End walk
           </Button>
         )}
         {walk.status === "completed" && (
           <div className="text-center text-sm text-emerald-700">
-            Walk completed · AED {walk.priceAed} will be paid out
+            Walk completed · AED {walk.price_aed} will be paid out
           </div>
         )}
-        {!canAccept && !isMine && (
+        {!canAccept && !isMine && walk.status !== "completed" && (
           <div className="text-center text-sm text-ink-500">
             This walk was taken by another walker.
           </div>

@@ -4,18 +4,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  getActiveWalkForWalker,
-  getAllWalks,
+  getActiveWalkForMe,
+  getMyProfile,
+  getMyWalkerCompleted,
+  getMyWalkerProfile,
   getOpenWalks,
-  getUser,
+  Profile,
   signOut,
-  User,
-  WalkRequest,
-} from "@/lib/store";
+  WalkerProfile,
+  WalkWithRefs,
+} from "@/lib/db";
 import { Badge, Button, Card, Empty, Header } from "@/components/UI";
 
-function timeAgo(ts: number) {
-  const mins = Math.max(1, Math.floor((Date.now() - ts) / 60000));
+function timeAgo(ts: string) {
+  const mins = Math.max(1, Math.floor((Date.now() - new Date(ts).getTime()) / 60000));
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
@@ -24,50 +26,72 @@ function timeAgo(ts: number) {
 
 export default function WalkerHome() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [open, setOpen] = useState<WalkRequest[]>([]);
-  const [active, setActive] = useState<WalkRequest | null>(null);
-  const [completed, setCompleted] = useState<WalkRequest[]>([]);
-  const [filterArea, setFilterArea] = useState<boolean>(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [walkerProfile, setWalkerProfile] = useState<WalkerProfile | null>(null);
+  const [open, setOpen] = useState<WalkWithRefs[]>([]);
+  const [active, setActive] = useState<WalkWithRefs | null>(null);
+  const [completed, setCompleted] = useState<WalkWithRefs[]>([]);
+  const [filterArea, setFilterArea] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  async function refresh(me: Profile | null, useFilter: boolean) {
+    if (!me) return;
+    try {
+      const [o, a, c] = await Promise.all([
+        getOpenWalks(useFilter && me.area ? me.area : undefined),
+        getActiveWalkForMe(),
+        getMyWalkerCompleted(),
+      ]);
+      setOpen(o);
+      setActive(a);
+      setCompleted(c);
+    } catch (e) {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
-    const u = getUser();
-    if (!u) {
-      router.replace("/");
-      return;
-    }
-    if (u.role !== "walker") {
-      router.replace("/owner");
-      return;
-    }
-    setUser(u);
-    const tick = () => {
-      setOpen(getOpenWalks(filterArea && u.area ? u.area : undefined));
-      setActive(getActiveWalkForWalker(u.id));
-      setCompleted(
-        getAllWalks()
-          .filter((w) => w.walkerId === u.id && w.status === "completed")
-          .sort((a, b) => (b.endedAt || 0) - (a.endedAt || 0))
-          .slice(0, 5),
-      );
-    };
-    tick();
-    const int = setInterval(tick, 1500);
+    (async () => {
+      const p = await getMyProfile();
+      if (!p) {
+        router.replace("/");
+        return;
+      }
+      if (p.role !== "walker") {
+        router.replace("/owner");
+        return;
+      }
+      setProfile(p);
+      try {
+        const wp = await getMyWalkerProfile();
+        setWalkerProfile(wp);
+      } catch {}
+      await refresh(p, filterArea);
+      setLoading(false);
+    })();
+  }, [router]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const int = setInterval(() => refresh(profile, filterArea), 3000);
     return () => clearInterval(int);
-  }, [router, filterArea]);
+  }, [profile, filterArea]);
 
-  if (!user) return null;
+  if (loading || !profile) {
+    return <div className="p-8 text-center text-ink-500">Loading…</div>;
+  }
 
-  const earnings = completed.reduce((sum, w) => sum + w.priceAed, 0);
+  const earnings = completed.reduce((sum, w) => sum + w.price_aed, 0);
+  const profileComplete = !!(walkerProfile?.photo_url && walkerProfile?.bio);
 
   return (
     <main className="min-h-screen pb-6">
       <Header
-        title={`Hi, ${user.name.split(" ")[0]}`}
+        title={`Hi, ${profile.name.split(" ")[0]}`}
         right={
           <button
-            onClick={() => {
-              signOut();
+            onClick={async () => {
+              await signOut();
               router.replace("/");
             }}
             className="text-xs font-medium text-ink-500"
@@ -78,15 +102,49 @@ export default function WalkerHome() {
       />
 
       <section className="space-y-4 px-5 py-5">
+        {!profileComplete && (
+          <Link href="/walker/profile/edit">
+            <Card className="border-amber-300 bg-amber-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                    Finish your profile
+                  </div>
+                  <div className="mt-1 text-sm text-amber-900">
+                    Owners book walkers they can see. Add a photo and a short
+                    bio.
+                  </div>
+                </div>
+                <div className="text-xl">→</div>
+              </div>
+            </Card>
+          </Link>
+        )}
+
         <Card className="bg-gradient-to-br from-brand-500 to-brand-700 text-white">
           <div className="text-xs uppercase tracking-wide text-brand-100">
-            This week&apos;s earnings
+            Earnings
           </div>
           <div className="mt-1 text-3xl font-bold">AED {earnings}</div>
           <div className="mt-1 text-sm text-brand-100">
             {completed.length} walk{completed.length === 1 ? "" : "s"} completed
           </div>
         </Card>
+
+        <div className="flex gap-2">
+          <Link
+            href="/walker/profile/edit"
+            className="flex-1 rounded-xl border border-ink-100 bg-white p-3 text-center text-sm font-semibold"
+          >
+            Edit profile
+          </Link>
+          <Link
+            href={`/walker-profile/${profile.id}`}
+            className="flex-1 rounded-xl border border-ink-100 bg-white p-3 text-center text-sm font-semibold"
+          >
+            Preview profile
+          </Link>
+        </div>
 
         {active && (
           <Link href={`/walker/walk/${active.id}`}>
@@ -99,10 +157,10 @@ export default function WalkerHome() {
                       : "You accepted a walk"}
                   </div>
                   <div className="mt-1 font-semibold">
-                    {active.dogName} · {active.area}
+                    {active.dog_name} · {active.area}
                   </div>
                   <div className="mt-0.5 text-sm text-ink-500">
-                    {active.durationMin} min · AED {active.priceAed}
+                    {active.duration_min} min · AED {active.price_aed}
                   </div>
                 </div>
                 <div className="text-xl">→</div>
@@ -119,7 +177,7 @@ export default function WalkerHome() {
               checked={filterArea}
               onChange={(e) => setFilterArea(e.target.checked)}
             />
-            My area only ({user.area})
+            My area only ({profile.area})
           </label>
         </div>
 
@@ -136,20 +194,20 @@ export default function WalkerHome() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="font-semibold">
-                        {w.dogName}{" "}
+                        {w.dog_name}{" "}
                         <span className="text-sm font-normal text-ink-500">
-                          · {w.dogBreed}
+                          · {w.dog_breed || "Mixed"}
                         </span>
                       </div>
                       <div className="mt-0.5 text-sm text-ink-500">
-                        {w.area} · {w.durationMin} min
+                        {w.area} · {w.duration_min} min
                       </div>
                       <div className="mt-1 text-xs text-ink-500">
-                        {timeAgo(w.createdAt)}
+                        {timeAgo(w.created_at)}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">AED {w.priceAed}</div>
+                      <div className="font-bold">AED {w.price_aed}</div>
                       <Badge tone="warn">New</Badge>
                     </div>
                   </div>
@@ -163,16 +221,16 @@ export default function WalkerHome() {
           <div className="pt-2">
             <h2 className="mb-2 font-semibold">Completed</h2>
             <div className="space-y-2">
-              {completed.map((w) => (
+              {completed.slice(0, 5).map((w) => (
                 <Card key={w.id}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-semibold">{w.dogName}</div>
+                      <div className="font-semibold">{w.dog_name}</div>
                       <div className="text-xs text-ink-500">
-                        {w.area} · {w.durationMin} min
+                        {w.area} · {w.duration_min} min
                       </div>
                     </div>
-                    <div className="font-semibold">AED {w.priceAed}</div>
+                    <div className="font-semibold">AED {w.price_aed}</div>
                   </div>
                 </Card>
               ))}

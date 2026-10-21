@@ -2,20 +2,26 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getUser } from "@/lib/store";
 import { useRouter } from "next/navigation";
+import { getMyProfile } from "@/lib/db";
 
 export default function Landing() {
   const router = useRouter();
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const u = getUser();
-    if (u) {
-      router.replace(u.role === "owner" ? "/owner" : "/walker");
-    } else {
+    (async () => {
+      try {
+        const p = await getMyProfile();
+        if (p) {
+          router.replace(p.role === "owner" ? "/owner" : "/walker");
+          return;
+        }
+      } catch {
+        /* not logged in — fall through */
+      }
       setChecked(true);
-    }
+    })();
   }, [router]);
 
   if (!checked) {
@@ -26,9 +32,7 @@ export default function Landing() {
     <main className="flex min-h-screen flex-col">
       <section className="relative overflow-hidden bg-gradient-to-br from-brand-400 to-brand-600 px-6 pb-14 pt-10 text-white">
         <div className="text-4xl">🐕</div>
-        <h1 className="mt-4 text-3xl font-bold leading-tight">
-          WoofWalk
-        </h1>
+        <h1 className="mt-4 text-3xl font-bold leading-tight">WoofWalk</h1>
         <p className="mt-2 text-sm text-brand-50/90">
           Dog walking on demand in Dubai
         </p>
@@ -84,7 +88,7 @@ export default function Landing() {
       </section>
 
       <footer className="px-6 pb-8 pt-2 text-center text-xs text-ink-300">
-        Made in Dubai · v0.1
+        Made in Dubai · v0.2
       </footer>
     </main>
   );
