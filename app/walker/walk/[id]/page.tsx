@@ -12,7 +12,7 @@ import {
   Profile,
   WalkWithRefs,
 } from "@/lib/db";
-import { Badge, Button, Card, Header } from "@/components/UI";
+import { Button, Card, Header, PawIcon } from "@/components/UI";
 
 function fmtTime(ts?: string | null) {
   if (!ts) return "—";
@@ -55,7 +55,11 @@ export default function WalkerWalkDetail() {
   }, [params.id]);
 
   if (!me || !walk) {
-    return <div className="p-8 text-center text-stone">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-stone">
+        Loading
+      </div>
+    );
   }
 
   const isMine = walk.walker_id === me.id;
@@ -100,116 +104,127 @@ export default function WalkerWalkDetail() {
     }
   }
 
+  // Headline that reads like a line in the walker's day
+  const headline =
+    walk.status === "pending"
+      ? `Walk ${walk.dog_name}?`
+      : walk.status === "accepted"
+        ? `On your way to ${walk.dog_name}.`
+        : walk.status === "in_progress"
+          ? `Walking ${walk.dog_name}.`
+          : walk.status === "completed"
+            ? `Walk completed.`
+            : `Walk cancelled.`;
+
   return (
-    <main className="min-h-screen pb-28">
-      <Header title="Walk" back="/walker" />
+    <main className="min-h-screen pb-32">
+      <Header title="" back="/walker" />
 
-      <section className="space-y-4 px-5 py-5">
+      {/* Headline */}
+      <section className="px-5 pt-2">
+        <p className="text-sm text-stone">{walk.area}</p>
+        <h1 className="mt-1 font-serif text-3xl leading-tight tracking-tightest">
+          {headline}
+        </h1>
+        <p className="mt-2 text-sm text-midnight/70">
+          {walk.dog_breed || "Mixed"} · {walk.duration_min} minute walk · AED{" "}
+          {walk.price_aed}
+        </p>
+      </section>
+
+      <section className="space-y-4 px-5 py-6">
+        {/* Dog card — the headline subject */}
         <Card>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-stone">
-                Dog
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-paper text-midnight/60">
+              <PawIcon className="h-6 w-6" />
+            </div>
+            <div className="flex-1">
+              <div className="font-serif text-lg leading-tight">
+                {walk.dog_name}
               </div>
-              <div className="mt-1 text-xl font-bold">{walk.dog_name}</div>
-              <div className="text-sm text-stone">{walk.dog_breed || "Mixed"}</div>
-            </div>
-            <Badge
-              tone={
-                walk.status === "completed"
-                  ? "ok"
-                  : walk.status === "pending"
-                    ? "warn"
-                    : "info"
-              }
-            >
-              {walk.status === "in_progress" ? "walking" : walk.status}
-            </Badge>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="text-xs text-stone">Owner</div>
-              <div className="font-semibold">{walk.owner_name}</div>
-            </div>
-            <div>
-              <div className="text-xs text-stone">Earnings</div>
-              <div className="font-semibold">AED {walk.price_aed}</div>
-            </div>
-            <div>
-              <div className="text-xs text-stone">Area</div>
-              <div className="font-semibold">{walk.area}</div>
-            </div>
-            <div>
-              <div className="text-xs text-stone">Duration</div>
-              <div className="font-semibold">{walk.duration_min} min</div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-xs text-stone">Pickup address</div>
-              <div className="font-medium">{walk.address}</div>
+              <div className="text-xs text-stone">
+                {walk.dog_breed || "Mixed"} · owner {walk.owner_name}
+              </div>
             </div>
           </div>
         </Card>
 
+        {/* Walk facts */}
+        <section>
+          <h2 className="mb-2 font-serif text-base">Pickup</h2>
+          <div className="rounded-2xl border border-paper p-4 text-sm">
+            <div className="whitespace-pre-wrap text-midnight">
+              {walk.address}
+            </div>
+          </div>
+        </section>
+
+        {/* In-progress panel */}
         {walk.status === "in_progress" && isMine && (
-          <Card className="border-midnight">
+          <Card tone="dark">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-midnight">
-                Walk in progress
+              <div className="text-xs uppercase tracking-wider text-lime">
+                Walking
               </div>
-              <span className="flex items-center gap-1 text-xs text-emerald-700">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              <span className="flex items-center gap-1.5 text-xs text-lime">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-lime" />
                 Tracking
               </span>
             </div>
-            <div className="mt-3 flex h-40 items-center justify-center rounded-xl bg-paper text-midnight">
-              🗺️ GPS tracking (real in v1)
+            <div className="mt-4 flex h-40 items-center justify-center rounded-xl border border-bone/15 bg-night text-sm text-bone/60">
+              GPS tracking arrives in a later update
             </div>
-            <div className="mt-3 flex items-center justify-between text-sm">
+            <div className="mt-4 flex items-center justify-between text-sm text-bone/80">
               <span>Photos sent</span>
-              <strong>{walk.photo_count || 0}</strong>
+              <strong className="font-serif text-lg text-bone">
+                {walk.photo_count || 0}
+              </strong>
             </div>
-            <div className="mt-2">
-              <Button variant="secondary" onClick={doPhoto}>
-                📷 Send photo to owner
-              </Button>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={doPhoto}
+                className="w-full rounded-full border border-bone/40 bg-transparent px-5 py-3 text-sm font-medium text-bone transition hover:bg-bone hover:text-midnight"
+              >
+                Send a photo to the owner
+              </button>
             </div>
           </Card>
         )}
 
-        <div className="text-xs text-stone">
+        {/* Timeline — subtle */}
+        <p className="pt-1 text-xs text-stone">
           Requested {fmtTime(walk.created_at)}
           {walk.accepted_at && <> · Accepted {fmtTime(walk.accepted_at)}</>}
           {walk.started_at && <> · Started {fmtTime(walk.started_at)}</>}
           {walk.ended_at && <> · Ended {fmtTime(walk.ended_at)}</>}
-        </div>
+        </p>
       </section>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-white px-5 py-3 space-y-2">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-bone px-5 py-3 space-y-2">
         {canAccept && (
           <Button onClick={doAccept} disabled={busy}>
-            Accept walk · AED {walk.price_aed}
+            {busy ? "Accepting…" : `Accept walk · AED ${walk.price_aed}`}
           </Button>
         )}
         {walk.status === "accepted" && isMine && (
           <Button onClick={doStart} disabled={busy}>
-            Start walk
+            {busy ? "Starting…" : "Start walk"}
           </Button>
         )}
         {walk.status === "in_progress" && isMine && (
           <Button variant="danger" onClick={doEnd} disabled={busy}>
-            End walk
+            {busy ? "Ending…" : "End walk"}
           </Button>
         )}
         {walk.status === "completed" && (
-          <div className="text-center text-sm text-emerald-700">
-            Walk completed · AED {walk.price_aed} will be paid out
+          <div className="py-2 text-center text-sm text-emerald2">
+            Walk completed · AED {walk.price_aed} payout queued
           </div>
         )}
         {!canAccept && !isMine && walk.status !== "completed" && (
-          <div className="text-center text-sm text-stone">
+          <div className="py-2 text-center text-sm text-stone">
             This walk was taken by another walker.
           </div>
         )}

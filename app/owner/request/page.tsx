@@ -12,7 +12,13 @@ import {
   priceFor,
   Profile,
 } from "@/lib/db";
-import { Button, Field, Header, inputCls } from "@/components/UI";
+import {
+  Button,
+  Field,
+  Header,
+  inputCls,
+  PawIcon,
+} from "@/components/UI";
 
 const DURATIONS = [15, 30, 45, 60];
 
@@ -87,92 +93,136 @@ export default function RequestWalk() {
   }
 
   if (!profile) {
-    return <div className="p-8 text-center text-stone">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-stone">
+        Loading
+      </div>
+    );
   }
+
+  const price = priceFor(duration);
 
   return (
     <main className="min-h-screen pb-28">
-      <Header title="Request a walk" back="/owner" />
-      <form onSubmit={onSubmit} className="space-y-4 px-5 py-5">
-        {showAddDog ? (
-          <div className="space-y-3 rounded-2xl border border-lime/40 bg-bone p-4">
-            <div className="text-sm font-semibold text-midnight">Add a dog</div>
-            <Field label="Name">
-              <input
-                className={inputCls}
-                value={newDog.name}
-                onChange={(e) => setNewDog({ ...newDog, name: e.target.value })}
-                placeholder="e.g. Rex"
-                required
-              />
-            </Field>
-            <Field label="Breed">
-              <input
-                className={inputCls}
-                value={newDog.breed}
-                onChange={(e) => setNewDog({ ...newDog, breed: e.target.value })}
-                placeholder="e.g. Golden Retriever"
-              />
-            </Field>
-            <Field label="Size">
-              <div className="grid grid-cols-3 gap-2">
-                {(["small", "medium", "large"] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setNewDog({ ...newDog, size: s })}
-                    className={`rounded-xl border px-3 py-2 text-sm capitalize ${
-                      newDog.size === s
-                        ? "border-midnight bg-white text-midnight"
-                        : "border-paper bg-white"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            </Field>
-            <Button type="button" onClick={onAddDog} variant="secondary">
-              Save dog
-            </Button>
-          </div>
-        ) : (
-          <Field label="Dog">
-            <div className="grid gap-2">
+      <Header title="" back="/owner" />
+
+      <section className="px-5 pt-2">
+        <h1 className="font-serif text-3xl leading-tight tracking-tightest">
+          Book a walk.
+        </h1>
+        <p className="mt-2 text-sm text-midnight/70">
+          A nearby walker usually accepts within minutes.
+        </p>
+      </section>
+
+      <form onSubmit={onSubmit} className="space-y-6 px-5 py-6">
+        {/* Dog section */}
+        <section>
+          <SectionLabel>Dog</SectionLabel>
+          {showAddDog ? (
+            <div className="space-y-4 rounded-2xl border border-paper bg-paper/40 p-4">
+              <Field label="Name">
+                <input
+                  className={inputCls}
+                  value={newDog.name}
+                  onChange={(e) =>
+                    setNewDog({ ...newDog, name: e.target.value })
+                  }
+                  placeholder="e.g. Rex"
+                  required
+                />
+              </Field>
+              <Field label="Breed">
+                <input
+                  className={inputCls}
+                  value={newDog.breed}
+                  onChange={(e) =>
+                    setNewDog({ ...newDog, breed: e.target.value })
+                  }
+                  placeholder="e.g. Golden Retriever"
+                />
+              </Field>
+              <Field label="Size">
+                <SegmentedGroup
+                  options={["small", "medium", "large"]}
+                  value={newDog.size}
+                  onChange={(s) =>
+                    setNewDog({ ...newDog, size: s as any })
+                  }
+                />
+              </Field>
+              <Button type="button" onClick={onAddDog} variant="secondary">
+                Save dog
+              </Button>
+            </div>
+          ) : (
+            <div className="divide-y divide-paper rounded-2xl border border-paper overflow-hidden">
               {dogs.map((d) => (
                 <button
                   key={d.id}
                   type="button"
                   onClick={() => setDogId(d.id)}
-                  className={`flex items-center gap-3 rounded-xl border p-3 text-left ${
-                    dogId === d.id
-                      ? "border-midnight bg-bone"
-                      : "border-paper bg-white"
+                  className={`flex w-full items-center gap-4 px-4 py-3.5 text-left transition ${
+                    dogId === d.id ? "bg-paper/50" : "hover:bg-paper/30"
                   }`}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-paper">
-                    🐕
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-full ${
+                      dogId === d.id
+                        ? "bg-midnight text-bone"
+                        : "bg-paper text-midnight/70"
+                    }`}
+                  >
+                    <PawIcon className="h-5 w-5" />
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold">{d.name}</div>
+                  <div className="flex-1">
+                    <div className="font-medium">{d.name}</div>
                     <div className="text-xs text-stone">
                       {d.breed || "Mixed"} · {d.size || "medium"}
                     </div>
+                  </div>
+                  <div
+                    className={`h-5 w-5 rounded-full border ${
+                      dogId === d.id
+                        ? "border-midnight bg-midnight"
+                        : "border-chalk"
+                    }`}
+                  >
+                    {dogId === d.id && (
+                      <svg
+                        viewBox="0 0 20 20"
+                        className="h-full w-full text-bone"
+                        fill="none"
+                      >
+                        <path
+                          d="M5 10l3 3 7-7"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
                   </div>
                 </button>
               ))}
               <button
                 type="button"
                 onClick={() => setShowAddDog(true)}
-                className="rounded-xl border border-dashed border-paper bg-white p-3 text-sm text-stone"
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-stone hover:bg-paper/30"
               >
-                + Add another dog
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-dashed border-chalk text-stone">
+                  +
+                </div>
+                Add another dog
               </button>
             </div>
-          </Field>
-        )}
+          )}
+        </section>
 
-        <Field label="Area">
+        {/* Area */}
+        <section>
+          <SectionLabel>Area</SectionLabel>
           <select
             className={inputCls}
             value={area}
@@ -184,9 +234,13 @@ export default function RequestWalk() {
               </option>
             ))}
           </select>
-        </Field>
+        </section>
 
-        <Field label="Pickup address" hint="Building, apartment, access notes">
+        {/* Address */}
+        <section>
+          <SectionLabel hint="Building, apartment, access notes">
+            Pickup address
+          </SectionLabel>
           <textarea
             className={inputCls}
             rows={3}
@@ -195,54 +249,110 @@ export default function RequestWalk() {
             placeholder="e.g. Marina Pinnacle Tower, Apt 1203. Buzzer at reception."
             required
           />
-        </Field>
+        </section>
 
-        <Field label="Duration">
+        {/* Duration */}
+        <section>
+          <SectionLabel>Duration</SectionLabel>
           <div className="grid grid-cols-4 gap-2">
             {DURATIONS.map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => setDuration(d)}
-                className={`rounded-xl border px-2 py-3 text-sm font-semibold ${
+                className={`rounded-full border py-3 text-sm font-medium transition ${
                   duration === d
-                    ? "border-midnight bg-bone text-midnight"
-                    : "border-paper bg-white"
+                    ? "border-midnight bg-midnight text-bone"
+                    : "border-chalk bg-bone text-midnight hover:border-midnight"
                 }`}
               >
                 {d} min
               </button>
             ))}
           </div>
-        </Field>
+        </section>
 
-        <div className="rounded-xl bg-paper p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-midnight">Price</span>
-            <span className="text-xl font-bold">AED {priceFor(duration)}</span>
+        {/* Price summary */}
+        <section className="rounded-2xl bg-midnight p-5 text-bone">
+          <div className="flex items-end justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-lime">
+                Total
+              </div>
+              <div className="mt-1 font-serif text-3xl tracking-tightest">
+                AED {price}
+              </div>
+            </div>
+            <div className="text-right text-xs text-bone/70">
+              Paid on completion
+              <br />
+              Demo mode · no real charge
+            </div>
           </div>
-          <div className="mt-1 text-xs text-stone">
-            Payment on completion. Demo mode — no real charge.
-          </div>
-        </div>
+        </section>
 
         {err && (
-          <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{err}</div>
+          <div className="rounded-xl border border-clay/40 bg-bone p-3 text-sm text-clay">
+            {err}
+          </div>
         )}
       </form>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-white px-5 py-3">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-bone px-5 py-3">
         <Button
           type="button"
-          onClick={(() => {
-            const form = document.querySelector("form");
-            form?.requestSubmit();
-          }) as any}
+          onClick={() =>
+            (document.querySelector("form") as HTMLFormElement)?.requestSubmit()
+          }
           disabled={!dogId || !address.trim() || showAddDog || submitting}
         >
-          {submitting ? "Requesting…" : "Request walk"}
+          {submitting ? "Requesting…" : `Request walk · AED ${price}`}
         </Button>
       </nav>
     </main>
+  );
+}
+
+function SectionLabel({
+  children,
+  hint,
+}: {
+  children: React.ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="mb-2 flex items-baseline justify-between">
+      <h2 className="font-serif text-base text-midnight">{children}</h2>
+      {hint && <span className="text-xs text-stone">{hint}</span>}
+    </div>
+  );
+}
+
+function SegmentedGroup({
+  options,
+  value,
+  onChange,
+}: {
+  options: readonly string[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {options.map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={() => onChange(s)}
+          className={`rounded-full border py-2.5 text-sm font-medium capitalize transition ${
+            value === s
+              ? "border-midnight bg-midnight text-bone"
+              : "border-chalk bg-bone text-midnight hover:border-midnight"
+          }`}
+        >
+          {s}
+        </button>
+      ))}
+    </div>
   );
 }

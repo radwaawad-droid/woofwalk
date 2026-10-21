@@ -11,7 +11,7 @@ import {
   WalkerProfile,
   WalkWithRefs,
 } from "@/lib/db";
-import { Badge, Button, Card, Header } from "@/components/UI";
+import { Badge, Button, Card, Header, PawIcon } from "@/components/UI";
 
 function fmtTime(ts?: string | null) {
   if (!ts) return "—";
@@ -61,14 +61,23 @@ export default function OwnerWalkDetail() {
   if (notFound) {
     return (
       <main className="min-h-screen">
-        <Header title="Walk" back="/owner" />
-        <div className="p-8 text-center text-stone">
-          This walk doesn&apos;t exist or isn&apos;t yours.
+        <Header title="" back="/owner" />
+        <div className="px-5 py-16 text-center">
+          <h1 className="font-serif text-2xl">Not found.</h1>
+          <p className="mt-2 text-sm text-stone">
+            This walk doesn&apos;t exist or isn&apos;t yours.
+          </p>
         </div>
       </main>
     );
   }
-  if (!walk) return <div className="p-8 text-center text-stone">Loading…</div>;
+  if (!walk) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-stone">
+        Loading
+      </div>
+    );
+  }
 
   const canCancel = walk.status === "pending";
 
@@ -78,46 +87,49 @@ export default function OwnerWalkDetail() {
     router.replace("/owner");
   }
 
+  // Human-friendly status line
+  const statusLine =
+    walk.status === "pending"
+      ? "Looking for a walker"
+      : walk.status === "accepted"
+        ? `${walk.walker_name || "Walker"} is on the way`
+        : walk.status === "in_progress"
+          ? `${walk.walker_name || "Walker"} is walking ${walk.dog_name}`
+          : walk.status === "completed"
+            ? "Walk completed"
+            : "Walk cancelled";
+
   return (
-    <main className="min-h-screen">
-      <Header title="Walk details" back="/owner" />
+    <main className="min-h-screen pb-10">
+      <Header title="" back="/owner" />
 
-      <section className="space-y-4 px-5 py-5">
-        <Card>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-stone">Status</div>
-              <div className="mt-1 text-lg font-semibold capitalize">
-                {walk.status === "in_progress" ? "Walking now" : walk.status}
-              </div>
-            </div>
-            <Badge
-              tone={
-                walk.status === "completed"
-                  ? "ok"
-                  : walk.status === "pending"
-                    ? "warn"
-                    : walk.status === "cancelled"
-                      ? "neutral"
-                      : "info"
-              }
-            >
-              {walk.status === "in_progress" ? "live" : walk.status}
-            </Badge>
-          </div>
-        </Card>
+      {/* Status headline — sets the whole mood of the page */}
+      <section className="px-5 pt-2">
+        <p className="text-sm text-stone capitalize">
+          {walk.status === "in_progress" ? "Live" : walk.status}
+        </p>
+        <h1 className="mt-1 font-serif text-3xl leading-tight tracking-tightest">
+          {statusLine}.
+        </h1>
+      </section>
 
+      <section className="space-y-4 px-5 py-6">
+        {/* Pending state: a soft paper note */}
         {walk.status === "pending" && (
-          <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
-            Looking for a walker near {walk.area}… you&apos;ll be notified when
-            someone accepts.
-          </div>
+          <Card tone="warn">
+            <p className="text-sm text-midnight/80">
+              Looking for a walker near{" "}
+              <span className="font-medium">{walk.area}</span>. We&apos;ll let
+              you know the moment someone accepts.
+            </p>
+          </Card>
         )}
 
+        {/* Walker card — shows up as soon as there is one */}
         {walk.walker_id && (
           <Link href={`/walker-profile/${walk.walker_id}`}>
             <Card>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {walkerProfile?.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -126,90 +138,116 @@ export default function OwnerWalkDetail() {
                     className="h-14 w-14 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-paper text-2xl">
-                    🚶
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-paper">
+                    <PawIcon className="h-6 w-6 text-midnight/60" />
                   </div>
                 )}
                 <div className="flex-1">
-                  <div className="font-semibold">{walk.walker_name}</div>
+                  <div className="font-serif text-lg leading-tight">
+                    {walk.walker_name}
+                  </div>
                   <div className="mt-0.5 text-xs text-stone">
                     {walkerProfile?.rating_avg
-                      ? `★ ${walkerProfile.rating_avg} · ${walkerProfile.rating_count} reviews`
+                      ? `★ ${walkerProfile.rating_avg} · ${walkerProfile.rating_count} review${walkerProfile.rating_count === 1 ? "" : "s"}`
                       : "No reviews yet"}
-                    {walkerProfile?.id_verified && <> · ✓ Verified</>}
+                    {walkerProfile?.id_verified && (
+                      <span className="text-emerald2"> · ✓ Verified</span>
+                    )}
                   </div>
                 </div>
-                <div className="text-chalk">→</div>
+                <div className="text-stone text-sm">View</div>
               </div>
             </Card>
           </Link>
         )}
 
+        {/* In-progress strip — live indicator */}
         {walk.status === "in_progress" && (
-          <Card className="border-midnight">
+          <Card tone="dark">
             <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold text-midnight">Live walk</div>
-              <span className="flex items-center gap-1 text-xs text-emerald-700">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+              <div className="text-xs uppercase tracking-wider text-lime">
+                Walking now
+              </div>
+              <span className="flex items-center gap-1.5 text-xs text-lime">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-lime" />
                 Live
               </span>
             </div>
-            <div className="mt-3 flex h-40 items-center justify-center rounded-xl bg-paper text-midnight">
-              🗺️ Map preview (real GPS wires up in v1)
+            <div className="mt-4 flex h-40 items-center justify-center rounded-xl border border-bone/15 bg-night text-sm text-bone/60">
+              Live map arrives in a later update
             </div>
-            <div className="mt-3 text-sm text-midnight">
-              <strong>{walk.photo_count || 0}</strong> photos received
+            <div className="mt-4 flex items-center justify-between text-sm text-bone/80">
+              <span>Photos received</span>
+              <strong className="font-serif text-lg text-bone">
+                {walk.photo_count || 0}
+              </strong>
             </div>
           </Card>
         )}
 
+        {/* Completed state */}
         {walk.status === "completed" && (
-          <Card>
-            <div className="text-sm font-semibold">All done — thanks!</div>
-            <div className="mt-2 text-sm text-stone">
+          <Card tone="accent">
+            <div className="font-serif text-lg">All done.</div>
+            <p className="mt-1 text-sm text-midnight/80">
               {walk.walker_name} finished walking {walk.dog_name} at{" "}
-              {fmtTime(walk.ended_at)}. In the real app, your card is charged
-              AED {walk.price_aed} now.
-            </div>
+              {fmtTime(walk.ended_at)}. In the real app, your card would be
+              charged AED {walk.price_aed} now.
+            </p>
           </Card>
         )}
 
-        <Card>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="text-xs text-stone">Dog</div>
-              <div className="font-semibold">{walk.dog_name}</div>
-              <div className="text-stone">{walk.dog_breed}</div>
-            </div>
-            <div>
-              <div className="text-xs text-stone">Area</div>
-              <div className="font-semibold">{walk.area}</div>
-            </div>
-            <div>
-              <div className="text-xs text-stone">Duration</div>
-              <div className="font-semibold">{walk.duration_min} min</div>
-            </div>
-            <div>
-              <div className="text-xs text-stone">Price</div>
-              <div className="font-semibold">AED {walk.price_aed}</div>
-            </div>
-            <div className="col-span-2">
-              <div className="text-xs text-stone">Address</div>
-              <div className="font-medium">{walk.address}</div>
-            </div>
-            <div>
-              <div className="text-xs text-stone">Requested</div>
-              <div className="font-semibold">{fmtTime(walk.created_at)}</div>
-            </div>
-          </div>
-        </Card>
+        {/* Walk facts — plain list, hairlines */}
+        <section className="pt-2">
+          <h2 className="mb-2 font-serif text-base">Details</h2>
+          <dl className="divide-y divide-paper rounded-2xl border border-paper">
+            <Row label="Dog" value={`${walk.dog_name}${walk.dog_breed ? ` · ${walk.dog_breed}` : ""}`} />
+            <Row label="Area" value={walk.area} />
+            <Row label="Duration" value={`${walk.duration_min} min`} />
+            <Row label="Price" value={`AED ${walk.price_aed}`} />
+            <Row label="Address" value={walk.address} multiline />
+            <Row label="Requested" value={fmtTime(walk.created_at)} />
+            {walk.accepted_at && (
+              <Row label="Accepted" value={fmtTime(walk.accepted_at)} />
+            )}
+            {walk.started_at && (
+              <Row label="Started" value={fmtTime(walk.started_at)} />
+            )}
+            {walk.ended_at && (
+              <Row label="Ended" value={fmtTime(walk.ended_at)} />
+            )}
+          </dl>
+        </section>
 
         {canCancel && (
-          <Button variant="ghost" onClick={doCancel}>
-            Cancel request
-          </Button>
+          <div className="pt-2">
+            <Button variant="ghost" onClick={doCancel}>
+              Cancel request
+            </Button>
+          </div>
         )}
       </section>
     </main>
+  );
+}
+
+function Row({
+  label,
+  value,
+  multiline,
+}: {
+  label: string;
+  value: string;
+  multiline?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 px-4 py-3">
+      <dt className="text-xs text-stone pt-0.5">{label}</dt>
+      <dd
+        className={`text-right text-sm font-medium text-midnight ${multiline ? "max-w-[70%]" : ""}`}
+      >
+        {value}
+      </dd>
+    </div>
   );
 }

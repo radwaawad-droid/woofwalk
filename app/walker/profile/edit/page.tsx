@@ -13,7 +13,7 @@ import {
   upsertMyWalkerProfile,
   WalkerProfile,
 } from "@/lib/db";
-import { Button, Field, Header, inputCls } from "@/components/UI";
+import { Button, Field, Header, inputCls, PawIcon } from "@/components/UI";
 
 export default function WalkerProfileEdit() {
   const router = useRouter();
@@ -74,7 +74,6 @@ export default function WalkerProfileEdit() {
     try {
       const url = await uploadWalkerPhoto(file);
       setPhotoUrl(url);
-      // Save immediately so a refresh keeps it
       await upsertMyWalkerProfile({ photo_url: url });
     } catch (e: any) {
       setErr(e?.message || "Photo upload failed.");
@@ -113,27 +112,44 @@ export default function WalkerProfileEdit() {
   }
 
   if (!profile) {
-    return <div className="p-8 text-center text-stone">Loading…</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-stone">
+        Loading
+      </div>
+    );
   }
 
   return (
     <main className="min-h-screen pb-28">
-      <Header title="Your walker profile" back="/walker" />
+      <Header title="" back="/walker" />
 
-      <form onSubmit={onSave} className="space-y-5 px-5 py-5">
-        <div className="flex items-center gap-4">
-          {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl}
-              alt="You"
-              className="h-20 w-20 rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-paper text-3xl">
-              🚶
-            </div>
-          )}
+      <section className="px-5 pt-2">
+        <h1 className="font-serif text-3xl leading-tight tracking-tightest">
+          Your profile.
+        </h1>
+        <p className="mt-2 text-sm text-midnight/70">
+          This is what owners see before accepting your walks. A face and a
+          few lines go a long way.
+        </p>
+      </section>
+
+      <form onSubmit={onSave} className="space-y-6 px-5 py-6">
+        {/* Photo */}
+        <section className="flex items-center gap-5">
+          <div className="relative">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photoUrl}
+                alt="You"
+                className="h-24 w-24 rounded-full object-cover ring-1 ring-paper"
+              />
+            ) : (
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-paper text-midnight/50">
+                <PawIcon className="h-8 w-8" />
+              </div>
+            )}
+          </div>
           <div className="flex-1">
             <input
               ref={fileRef}
@@ -145,144 +161,184 @@ export default function WalkerProfileEdit() {
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="rounded-xl bg-paper px-4 py-2 text-sm font-semibold text-midnight"
+              className="rounded-full border border-midnight px-4 py-2 text-sm font-medium text-midnight transition hover:bg-midnight hover:text-bone disabled:opacity-50"
               disabled={uploading}
             >
               {uploading ? "Uploading…" : photoUrl ? "Change photo" : "Add photo"}
             </button>
-            <p className="mt-1 text-xs text-stone">
+            <p className="mt-2 text-xs text-stone">
               A clear face photo helps owners trust you.
             </p>
           </div>
-        </div>
+        </section>
 
-        <Field label="Name">
-          <input
-            className={inputCls}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </Field>
+        {/* Basics */}
+        <section className="space-y-4 border-t border-paper pt-6">
+          <SectionLabel>Basics</SectionLabel>
 
-        <Field label="Phone">
-          <input
-            className={inputCls}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            inputMode="tel"
-            placeholder="+971 50 123 4567"
-          />
-        </Field>
-
-        <Field label="About you" hint="A few lines on why you love walking dogs">
-          <textarea
-            className={inputCls}
-            rows={4}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="e.g. I've grown up with dogs my whole life and have been walking dogs in Dubai Marina for 2 years. I'm comfortable with all sizes including reactive dogs."
-          />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Years of experience">
+          <Field label="Name">
             <input
-              type="number"
-              min={0}
               className={inputCls}
-              value={years}
-              onChange={(e) =>
-                setYears(e.target.value === "" ? "" : Number(e.target.value))
-              }
-              placeholder="2"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
             />
           </Field>
-          <Field label="Hourly rate (AED)">
+
+          <Field label="Phone">
             <input
-              type="number"
-              min={0}
               className={inputCls}
-              value={rate}
-              onChange={(e) =>
-                setRate(e.target.value === "" ? "" : Number(e.target.value))
-              }
-              placeholder="70"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              inputMode="tel"
+              placeholder="+971 50 123 4567"
             />
           </Field>
-        </div>
+        </section>
 
-        <Field label="Languages you speak">
-          <div className="flex flex-wrap gap-2">
-            {LANGUAGES.map((l) => (
-              <button
-                type="button"
-                key={l}
-                onClick={() => setLangs(toggle(langs, l))}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  langs.includes(l)
-                    ? "border-midnight bg-bone text-midnight"
-                    : "border-paper bg-white text-midnight"
-                }`}
-              >
-                {l}
-              </button>
-            ))}
+        {/* About */}
+        <section className="space-y-4 border-t border-paper pt-6">
+          <SectionLabel>About you</SectionLabel>
+          <Field label="A short bio" hint="Why you love walking dogs">
+            <textarea
+              className={inputCls}
+              rows={4}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="e.g. Grew up with dogs. Walking regularly in Dubai Marina for 2 years — comfortable with all sizes, including reactive dogs."
+            />
+          </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Years' experience">
+              <input
+                type="number"
+                min={0}
+                className={inputCls}
+                value={years}
+                onChange={(e) =>
+                  setYears(e.target.value === "" ? "" : Number(e.target.value))
+                }
+                placeholder="2"
+              />
+            </Field>
+            <Field label="Rate per walk (AED)">
+              <input
+                type="number"
+                min={0}
+                className={inputCls}
+                value={rate}
+                onChange={(e) =>
+                  setRate(e.target.value === "" ? "" : Number(e.target.value))
+                }
+                placeholder="70"
+              />
+            </Field>
           </div>
-        </Field>
 
-        <Field label="Primary area">
-          <select
-            className={inputCls}
-            value={primaryArea}
-            onChange={(e) => setPrimaryArea(e.target.value)}
-          >
-            {DUBAI_AREAS.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="Other areas you'll walk in">
-          <div className="flex flex-wrap gap-2">
-            {DUBAI_AREAS.map((a) => (
-              <button
-                type="button"
-                key={a}
-                onClick={() => setAreas(toggle(areas, a))}
-                className={`rounded-full border px-3 py-1 text-sm ${
-                  areas.includes(a)
-                    ? "border-midnight bg-bone text-midnight"
-                    : "border-paper bg-white text-midnight"
-                }`}
-              >
-                {a}
-              </button>
-            ))}
+          <div>
+            <SubLabel>Languages you speak</SubLabel>
+            <ChipGroup
+              options={LANGUAGES}
+              selected={langs}
+              onToggle={(l) => setLangs(toggle(langs, l))}
+            />
           </div>
-        </Field>
+        </section>
+
+        {/* Areas */}
+        <section className="space-y-4 border-t border-paper pt-6">
+          <SectionLabel>Where you walk</SectionLabel>
+
+          <Field label="Primary area">
+            <select
+              className={inputCls}
+              value={primaryArea}
+              onChange={(e) => setPrimaryArea(e.target.value)}
+            >
+              {DUBAI_AREAS.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <div>
+            <SubLabel>Other areas you&apos;re happy to go to</SubLabel>
+            <ChipGroup
+              options={DUBAI_AREAS}
+              selected={areas}
+              onToggle={(a) => setAreas(toggle(areas, a))}
+            />
+          </div>
+        </section>
 
         {err && (
-          <div className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{err}</div>
+          <div className="rounded-xl border border-clay/40 bg-bone p-3 text-sm text-clay">
+            {err}
+          </div>
         )}
         {msg && (
-          <div className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-700">
+          <div className="rounded-xl border border-emerald2/40 bg-bone p-3 text-sm text-emerald2">
             {msg}
           </div>
         )}
       </form>
 
-      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-white px-5 py-3">
+      <nav className="fixed inset-x-0 bottom-0 mx-auto max-w-md border-t border-paper bg-bone px-5 py-3">
         <Button
           type="button"
-          onClick={() => (document.querySelector("form") as HTMLFormElement)?.requestSubmit()}
+          onClick={() =>
+            (document.querySelector("form") as HTMLFormElement)?.requestSubmit()
+          }
           disabled={saving}
         >
           {saving ? "Saving…" : "Save profile"}
         </Button>
       </nav>
     </main>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <h2 className="font-serif text-base text-midnight">{children}</h2>;
+}
+
+function SubLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-2 text-xs font-medium text-stone">{children}</div>
+  );
+}
+
+function ChipGroup({
+  options,
+  selected,
+  onToggle,
+}: {
+  options: readonly string[];
+  selected: string[];
+  onToggle: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => {
+        const active = selected.includes(o);
+        return (
+          <button
+            key={o}
+            type="button"
+            onClick={() => onToggle(o)}
+            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+              active
+                ? "border-midnight bg-midnight text-bone"
+                : "border-chalk bg-bone text-midnight hover:border-midnight"
+            }`}
+          >
+            {o}
+          </button>
+        );
+      })}
+    </div>
   );
 }
