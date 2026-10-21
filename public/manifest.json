@@ -1,0 +1,10 @@
+{
+  "name": "WoofWalk",
+  "short_name": "WoofWalk",
+  "description": "Dog walking on demand in Dubai",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf7f0",
+  "theme_color": "#d4722a",
+  "icons": []
+}
