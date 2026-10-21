@@ -182,234 +182,598 @@ function StoryTile({
   );
 }
 
-/* --- Scene 1: a dog by a door, keys in frame --- */
+/* Shared palette tokens — kept inline to the SVG files for simplicity */
+const INK = "#0E1C2F";
+const BONE = "#F6F1E7";
+const CREAM = "#EBE2CB";  // Soft parchment fill, warmer than bone
+const SHADOW = "#C9B99A"; // A muted taupe for undertones
+const LIME = "#D8E86B";
+
+/* --- Scene 1: Golden retriever waiting by the door, leash on hook --- */
 function SceneDog() {
   return (
     <svg
-      viewBox="0 0 240 180"
+      viewBox="0 0 300 200"
       className="h-full w-full"
       role="img"
-      aria-label="A dog waiting by the door with keys in the owner's hand"
+      aria-label="A golden retriever waiting by the door with its leash hanging on a hook"
     >
-      <g
+      {/* Floor band */}
+      <path
+        d="M0 170 L 300 170 L 300 200 L 0 200 Z"
+        fill={CREAM}
+        opacity="0.6"
+      />
+      <path
+        d="M0 170 L 300 170"
+        stroke={INK}
+        strokeWidth="1.4"
         fill="none"
-        stroke="#0E1C2F"
-        strokeWidth="1.8"
-        strokeLinecap="round"
+      />
+
+      {/* Floor shadow under the dog */}
+      <ellipse cx="178" cy="172" rx="56" ry="4" fill={SHADOW} opacity="0.4" />
+
+      {/* Door frame on left */}
+      <g fill="none" stroke={INK} strokeWidth="1.6" strokeLinejoin="round">
+        <path d="M28 42 L 28 170" />
+        <path d="M28 42 Q 70 38 112 40 L 112 170" />
+        <path d="M20 42 L 120 42" strokeWidth="1" />
+        {/* Door panels — subtle rectangles for depth */}
+        <rect x="42" y="60"  width="56" height="46" rx="2" opacity="0.5" />
+        <rect x="42" y="116" width="56" height="42" rx="2" opacity="0.5" />
+      </g>
+      {/* Doorknob */}
+      <circle cx="102" cy="104" r="2.6" fill={INK} />
+
+      {/* Hook with leash hanging — the lime accent lives here */}
+      <g>
+        {/* Hook base */}
+        <path
+          d="M68 54 L 68 60 Q 68 64 72 64"
+          stroke={INK}
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        {/* Leash hanging — a curving loop */}
+        <path
+          d="M72 64 Q 76 86 68 100 Q 60 112 72 118 Q 86 118 84 102 Q 82 90 74 80"
+          stroke={LIME}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+        />
+        {/* Leash clip at the bottom */}
+        <circle cx="84" cy="100" r="2" fill={INK} />
+      </g>
+
+      {/* === DOG === a sitting golden-retriever shape, facing left */}
+      {/* Body silhouette: filled cream, outlined ink */}
+      {/* Rear + back */}
+      <path
+        d="M226 168 Q 232 138 220 118 Q 208 102 184 100 Q 160 102 148 118 Q 136 134 140 158 L 138 168 Q 134 170 134 174 L 230 174 Q 230 170 226 168 Z"
+        fill={CREAM}
+        stroke={INK}
+        strokeWidth="1.6"
         strokeLinejoin="round"
-      >
-        {/* Door frame (left side), slightly skewed to feel hand-drawn */}
-        <path d="M18 36 L18 164" />
-        <path d="M18 36 Q 46 32 72 34 L 72 164" />
-        <path d="M18 164 L 72 164" />
-        {/* Door knob */}
-        <circle cx="63" cy="104" r="2.5" fill="#0E1C2F" />
-
-        {/* Floor line */}
-        <path d="M4 164 Q 120 170 236 162" />
-
-        {/* Dog — sitting, facing right */}
-        {/* Body + rear */}
-        <path d="M118 150 Q 114 130 128 118 Q 150 108 174 118 Q 184 124 182 148 L 180 158" />
-        {/* Front legs */}
-        <path d="M138 148 L 138 162" />
-        <path d="M152 148 L 152 162" />
-        {/* Rear leg hint */}
-        <path d="M176 150 Q 180 158 178 162" />
-        {/* Head */}
-        <path d="M180 128 Q 192 124 198 118 Q 206 110 212 112 Q 220 116 218 128 Q 216 138 202 142 Q 192 144 184 140" />
-        {/* Ear flopping */}
-        <path d="M196 112 Q 190 108 186 118 Q 184 124 190 128" />
-        {/* Eye */}
-        <circle cx="206" cy="124" r="1.3" fill="#0E1C2F" />
-        {/* Snout */}
-        <path d="M216 128 Q 222 128 224 132" />
-        {/* Nose dot */}
-        <circle cx="224" cy="131" r="1.4" fill="#0E1C2F" />
-        {/* Tail curling up */}
-        <path d="M118 134 Q 108 122 114 110 Q 120 100 112 94" />
-
-        {/* Owner's hand with keys — reaching in from top-right */}
-        <path d="M232 44 Q 220 48 212 56 Q 206 62 206 68" />
-        {/* Key ring */}
-        <circle cx="206" cy="72" r="4" />
-        {/* Key teeth */}
-        <path d="M206 76 L 206 86 L 210 86 M 206 82 L 209 82" />
+      />
+      {/* Chest curve shadow — adds a tiny bit of depth */}
+      <path
+        d="M150 120 Q 158 148 158 168"
+        stroke={SHADOW}
+        strokeWidth="1"
+        fill="none"
+        opacity="0.7"
+      />
+      {/* Front legs — two parallel columns tucked under chest */}
+      <g fill={CREAM} stroke={INK} strokeWidth="1.6" strokeLinejoin="round">
+        <path d="M158 148 Q 156 164 160 172 L 170 172 Q 174 164 170 148 Z" />
+        <path d="M178 148 Q 176 164 180 172 L 190 172 Q 194 164 190 148 Z" />
       </g>
 
-      {/* Lime accent — a small heart/paw suggesting affection */}
-      <g transform="translate(90 52)" fill="#D8E86B" stroke="#0E1C2F" strokeWidth="1.4" strokeLinejoin="round">
-        <path d="M8 14 Q 0 10 2 4 Q 5 0 8 4 Q 11 0 14 4 Q 16 10 8 14 Z" />
-      </g>
+      {/* Head: lower than top of body, tilted slightly up */}
+      {/* Head mass */}
+      <path
+        d="M118 112 Q 112 104 118 94 Q 126 82 142 82 Q 158 82 164 94 Q 166 102 164 110 Q 164 118 158 124 Q 144 132 128 126 Q 120 122 118 112 Z"
+        fill={CREAM}
+        stroke={INK}
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      {/* Drooping ear — golden-retriever style */}
+      <path
+        d="M156 90 Q 170 96 168 112 Q 164 122 156 120 Q 150 112 152 100 Z"
+        fill={SHADOW}
+        stroke={INK}
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      {/* Snout extending left */}
+      <path
+        d="M118 106 Q 108 108 104 114 Q 102 120 106 124 Q 112 128 120 124"
+        fill={CREAM}
+        stroke={INK}
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      {/* Nose */}
+      <ellipse cx="104" cy="116" rx="3" ry="2.4" fill={INK} />
+      {/* Mouth hint */}
+      <path
+        d="M108 120 Q 112 124 118 122"
+        stroke={INK}
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+      {/* Eye — small, warm */}
+      <circle cx="132" cy="104" r="2" fill={INK} />
+      <circle cx="131" cy="103" r="0.6" fill={BONE} />
+      {/* Eyebrow mark */}
+      <path
+        d="M128 98 Q 132 96 136 98"
+        stroke={INK}
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+
+      {/* Collar on the neck — subtle ink band, no lime (lime is the leash) */}
+      <path
+        d="M152 118 Q 156 126 150 130"
+        stroke={INK}
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+      />
+      {/* Tag */}
+      <circle cx="149" cy="130" r="1.8" fill={INK} />
+
+      {/* Tail — curled up and over */}
+      <path
+        d="M226 134 Q 240 122 234 108 Q 228 98 240 92"
+        stroke={INK}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        fill="none"
+      />
     </svg>
   );
 }
 
-/* --- Scene 2: a walker approaching, phone in hand --- */
+/* --- Scene 2: a walker approaching, phone in hand, Dubai background --- */
 function SceneWalker() {
   return (
     <svg
-      viewBox="0 0 240 180"
+      viewBox="0 0 300 200"
       className="h-full w-full"
       role="img"
-      aria-label="A walker arriving with their phone"
+      aria-label="A walker approaching with their phone, map pin visible on screen"
     >
-      <g
-        fill="none"
-        stroke="#0E1C2F"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {/* Horizon / pavement */}
-        <path d="M4 150 Q 120 156 236 148" />
-        <path d="M30 158 L 40 158 M 60 160 L 72 160 M 94 158 L 102 158 M 130 160 L 142 160 M 170 158 L 184 158 M 206 160 L 218 160" />
-
-        {/* Walker — mid-stride */}
-        {/* Head */}
-        <circle cx="120" cy="52" r="12" />
-        {/* Hair tuft */}
-        <path d="M110 42 Q 118 36 128 42" />
-        {/* Body */}
-        <path d="M120 64 L 118 108" />
-        {/* Arm with phone (bent, up to chest) */}
-        <path d="M118 76 Q 108 82 106 94 L 112 102" />
-        {/* Phone */}
-        <rect x="98" y="96" width="14" height="20" rx="2" />
-        {/* Little screen bubble on phone */}
-        <path d="M101 102 L 109 102 M 101 106 L 107 106" />
-        {/* Other arm, swinging back */}
-        <path d="M120 76 Q 134 82 136 98" />
-        {/* Legs mid-stride */}
-        <path d="M118 108 Q 110 128 102 146" />
-        <path d="M118 108 Q 128 126 132 146" />
-
-        {/* Second person far behind (depth) */}
-        <circle cx="40" cy="92" r="5" />
-        <path d="M40 97 L 40 118 M 40 103 L 34 112 M 40 103 L 46 112 M 40 118 L 36 134 M 40 118 L 44 134" />
-
-        {/* A door frame in the distance where the dog is waiting */}
-        <path d="M196 100 L 196 150" />
-        <path d="M196 100 Q 212 98 224 100 L 224 150" />
-        {/* Doorknob dot */}
-        <circle cx="220" cy="128" r="1.5" fill="#0E1C2F" />
+      {/* Sky band — paper tone slightly warmer than background */}
+      <rect x="0" y="0" width="300" height="150" fill={BONE} />
+      {/* Pavement */}
+      <path
+        d="M0 150 L 300 150 L 300 200 L 0 200 Z"
+        fill={CREAM}
+        opacity="0.6"
+      />
+      <path d="M0 150 L 300 150" stroke={INK} strokeWidth="1.4" fill="none" />
+      {/* Pavement texture — small ticks */}
+      <g stroke={INK} strokeWidth="1" strokeLinecap="round" opacity="0.5">
+        <path d="M20 162 L 32 162" />
+        <path d="M66 164 L 80 164" />
+        <path d="M110 162 L 122 162" />
+        <path d="M196 164 L 208 164" />
+        <path d="M248 162 L 262 162" />
       </g>
 
-      {/* Lime accent — notification bubble floating off the phone */}
-      <g transform="translate(76 76)">
+      {/* Dubai skyline — soft midnight silhouette in the far distance */}
+      <g fill={SHADOW} opacity="0.6">
+        <path d="M0 150 L 0 128 L 14 124 L 14 110 L 24 110 L 24 150 Z" />
+        <path d="M30 150 L 30 118 L 42 118 L 42 150 Z" />
+        <path d="M240 150 L 240 108 L 248 108 L 248 100 L 254 96 L 260 100 L 260 112 L 268 112 L 268 150 Z" />
+        <path d="M275 150 L 275 120 L 288 120 L 288 150 Z" />
+      </g>
+
+      {/* Palm tree on the right-middle — characteristic Dubai detail */}
+      <g>
+        {/* Trunk */}
         <path
-          d="M12 2 Q 2 2 2 12 Q 2 20 10 20 L 14 26 L 16 20 Q 22 20 22 12 Q 22 2 12 2 Z"
-          fill="#D8E86B"
-          stroke="#0E1C2F"
+          d="M212 150 Q 210 128 214 106"
+          stroke={INK}
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          fill="none"
+        />
+        {/* Trunk texture rings */}
+        <g stroke={INK} strokeWidth="0.8" fill="none" opacity="0.6">
+          <path d="M209 140 Q 212 139 215 140" />
+          <path d="M210 128 Q 213 127 216 128" />
+          <path d="M212 116 Q 215 115 218 116" />
+        </g>
+        {/* Palm fronds */}
+        <g stroke={INK} strokeWidth="1.6" strokeLinecap="round" fill="none">
+          <path d="M214 106 Q 198 100 184 108" />
+          <path d="M214 106 Q 230 100 244 108" />
+          <path d="M214 106 Q 200 92 190 82" />
+          <path d="M214 106 Q 228 92 238 82" />
+          <path d="M214 106 Q 214 90 214 76" />
+        </g>
+        {/* Little leaf accents on fronds */}
+        <g fill={SHADOW} opacity="0.8">
+          <ellipse cx="190" cy="104" rx="4" ry="1.5" transform="rotate(-15 190 104)" />
+          <ellipse cx="238" cy="104" rx="4" ry="1.5" transform="rotate(15 238 104)" />
+          <ellipse cx="196" cy="88" rx="4" ry="1.5" transform="rotate(-45 196 88)" />
+          <ellipse cx="232" cy="88" rx="4" ry="1.5" transform="rotate(45 232 88)" />
+        </g>
+      </g>
+
+      {/* === WALKER === centered, facing viewer, mid-stride, phone up */}
+      <g>
+        {/* Shadow under walker */}
+        <ellipse cx="130" cy="156" rx="18" ry="2.5" fill={SHADOW} opacity="0.5" />
+
+        {/* Legs — mid stride, filled cream */}
+        {/* Back leg (further) */}
+        <path
+          d="M126 112 Q 122 128 116 148 L 110 156 L 118 156 L 126 142 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        {/* Front leg (nearer) */}
+        <path
+          d="M134 112 Q 138 126 142 148 L 148 156 L 140 156 L 132 140 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        {/* Shoes */}
+        <path d="M108 154 Q 112 158 120 157" stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round" />
+        <path d="M138 154 Q 142 158 150 157" stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round" />
+
+        {/* Torso — t-shirt (cream, outlined) */}
+        <path
+          d="M110 76 Q 114 108 118 114 L 142 114 Q 146 108 150 76 Q 142 70 130 70 Q 118 70 110 76 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        {/* T-shirt collar hint */}
+        <path d="M124 72 Q 130 78 136 72" stroke={INK} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        {/* Shadow strip for depth */}
+        <path d="M114 90 Q 117 108 120 112" stroke={SHADOW} strokeWidth="1" fill="none" opacity="0.8" />
+
+        {/* Right arm — down, swinging back */}
+        <path
+          d="M148 82 Q 158 94 158 110 L 154 112 Q 150 98 144 86 Z"
+          fill={CREAM}
+          stroke={INK}
           strokeWidth="1.4"
           strokeLinejoin="round"
         />
-        {/* Tiny paw inside bubble */}
-        <g fill="#0E1C2F">
-          <circle cx="8"  cy="9"  r="1.3" />
-          <circle cx="12" cy="7"  r="1.3" />
-          <circle cx="16" cy="9"  r="1.3" />
-          <ellipse cx="12" cy="14" rx="3" ry="2" />
+        {/* Hand hint */}
+        <circle cx="156" cy="112" r="2.5" fill={CREAM} stroke={INK} strokeWidth="1.2" />
+
+        {/* Left arm — bent, holding phone up to chest */}
+        <path
+          d="M112 82 Q 100 94 100 110 L 104 118 Q 110 108 116 94 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+        {/* Hand holding phone */}
+        <circle cx="102" cy="118" r="3" fill={CREAM} stroke={INK} strokeWidth="1.2" />
+
+        {/* Head */}
+        <path
+          d="M114 44 Q 114 32 130 32 Q 146 32 146 44 L 146 60 Q 146 70 130 70 Q 114 70 114 60 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        {/* Hair — short, tucked under a cap */}
+        <path
+          d="M116 44 Q 118 36 130 34 Q 142 34 144 44"
+          stroke={INK}
+          strokeWidth="1.4"
+          fill="none"
+          strokeLinecap="round"
+        />
+        {/* Cap brim */}
+        <path
+          d="M112 42 Q 120 38 148 42 L 150 46 Q 130 44 112 46 Z"
+          fill={INK}
+          stroke={INK}
+          strokeWidth="1.2"
+          strokeLinejoin="round"
+        />
+        {/* Face hints — small line for eye, hint of smile */}
+        <circle cx="124" cy="52" r="1.3" fill={INK} />
+        <circle cx="136" cy="52" r="1.3" fill={INK} />
+        <path d="M126 60 Q 130 63 134 60" stroke={INK} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        {/* Ear */}
+        <path d="M148 52 Q 152 54 150 60" stroke={INK} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      </g>
+
+      {/* Phone in hand, tilted up — screen shows a lime map pin */}
+      <g transform="translate(78 92) rotate(-8)">
+        {/* Phone body */}
+        <rect
+          x="0"
+          y="0"
+          width="24"
+          height="36"
+          rx="4"
+          fill={INK}
+          stroke={INK}
+          strokeWidth="1.2"
+        />
+        {/* Screen */}
+        <rect x="2" y="4" width="20" height="28" rx="1.5" fill={BONE} />
+        {/* Simple map lines on screen */}
+        <path d="M2 14 L 22 14 M 2 22 L 22 22" stroke={SHADOW} strokeWidth="0.8" opacity="0.7" />
+        <path d="M8 4 L 8 32 M 16 4 L 16 32" stroke={SHADOW} strokeWidth="0.8" opacity="0.7" />
+        {/* Lime map pin — the moment the request lands */}
+        <g transform="translate(9 10)">
+          <path
+            d="M3 0 Q 0 0 0 3.5 Q 0 7 3 10 Q 6 7 6 3.5 Q 6 0 3 0 Z"
+            fill={LIME}
+            stroke={INK}
+            strokeWidth="0.8"
+            strokeLinejoin="round"
+          />
+          <circle cx="3" cy="3.5" r="1.2" fill={INK} />
         </g>
       </g>
     </svg>
   );
 }
 
-/* --- Scene 3: dog + walker from behind, mid-walk, photo frame overhead --- */
+/* --- Scene 3: walker + dog on a park path, phone-shaped photo update floating --- */
 function SceneWalk() {
   return (
     <svg
-      viewBox="0 0 240 180"
+      viewBox="0 0 300 200"
       className="h-full w-full"
       role="img"
-      aria-label="A walker and dog on a path, with a photo update floating overhead"
+      aria-label="A walker and dog on a path together, with a photo update floating overhead"
     >
-      <g
-        fill="none"
-        stroke="#0E1C2F"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {/* Curving path receding to vanishing point */}
-        <path d="M28 164 Q 90 150 130 112 Q 150 92 156 62" />
-        <path d="M68 166 Q 118 152 148 118 Q 164 100 170 68" />
-
-        {/* A tree on the right */}
-        <path d="M212 150 L 212 118" />
-        <path d="M212 118 Q 196 118 192 104 Q 200 94 212 100 Q 224 94 232 104 Q 228 118 212 118 Z" fill="#D8E86B" />
-
-        {/* Walker from behind */}
-        {/* Head */}
-        <circle cx="110" cy="78" r="10" />
-        {/* Body */}
-        <path d="M110 88 L 110 124" />
-        {/* Arms */}
-        <path d="M110 96 Q 100 102 98 114" />
-        <path d="M110 96 Q 120 102 124 114" />
-        {/* Legs */}
-        <path d="M110 124 Q 104 142 100 158" />
-        <path d="M110 124 Q 116 140 118 158" />
-
-        {/* Leash (midnight line from walker's hand to dog's neck) */}
-        <path d="M124 114 Q 136 124 142 132" />
-
-        {/* Dog from behind, trotting */}
-        {/* Body */}
-        <path d="M138 134 Q 148 128 160 134 Q 168 136 168 146 L 166 154" />
-        {/* Head */}
-        <path d="M138 134 Q 132 128 134 122 Q 140 120 144 126" />
-        {/* Ear */}
-        <path d="M138 124 Q 140 118 144 122" />
-        {/* Legs */}
-        <path d="M144 148 L 144 158" />
-        <path d="M156 148 L 156 158" />
-        <path d="M164 150 L 164 158" />
-        {/* Tail up and wagging */}
-        <path d="M168 134 Q 176 126 174 120" />
+      {/* Soft rising sun on the horizon — lime semicircle */}
+      <g>
+        <path
+          d="M38 120 Q 60 90 82 120 Z"
+          fill={LIME}
+          opacity="0.85"
+        />
+        <path
+          d="M38 120 Q 60 90 82 120"
+          fill="none"
+          stroke={INK}
+          strokeWidth="1.2"
+        />
       </g>
 
-      {/* Lime accent — photo frame floating as the owner's update */}
-      <g transform="translate(28 20)">
-        <rect
-          x="0"
-          y="0"
-          width="68"
-          height="52"
-          rx="3"
-          fill="#F6F1E7"
-          stroke="#0E1C2F"
-          strokeWidth="1.6"
-        />
-        {/* Image inside — simplified dog silhouette with lime background */}
-        <rect x="4" y="4" width="60" height="44" fill="#D8E86B" />
-        <g fill="#0E1C2F">
-          <ellipse cx="36" cy="32" rx="12" ry="8" />
-          <ellipse cx="46" cy="22" rx="5" ry="6" />
-          <path d="M50 18 L 52 12 L 48 14 Z" />
-          <circle cx="46" cy="22" r="1" fill="#F6F1E7" />
+      {/* Horizon */}
+      <path
+        d="M0 120 L 300 120"
+        stroke={INK}
+        strokeWidth="1"
+        opacity="0.5"
+        fill="none"
+      />
+
+      {/* Ground wash */}
+      <path
+        d="M0 120 L 300 120 L 300 200 L 0 200 Z"
+        fill={CREAM}
+        opacity="0.5"
+      />
+
+      {/* Path receding — two edges with a dirt tone */}
+      <path
+        d="M30 196 Q 90 170 130 150 Q 160 134 162 120 L 174 120 Q 176 134 192 150 Q 232 170 290 196 Z"
+        fill={CREAM}
+        stroke={INK}
+        strokeWidth="1.2"
+      />
+      {/* Dashed centre line */}
+      <path
+        d="M166 196 Q 168 170 168 150 Q 168 134 168 120"
+        stroke={SHADOW}
+        strokeWidth="1"
+        strokeDasharray="3 4"
+        fill="none"
+        opacity="0.7"
+      />
+
+      {/* Distant tree silhouettes left */}
+      <g fill={SHADOW} opacity="0.55" stroke={INK} strokeWidth="1">
+        <path d="M12 128 Q 4 116 12 108 Q 16 100 24 108 Q 32 112 28 120 Q 30 128 20 130 Z" />
+        <path d="M18 128 L 18 140" stroke={INK} strokeWidth="1.2" fill="none" />
+      </g>
+
+      {/* Shrubs along path */}
+      <g fill={SHADOW} opacity="0.7" stroke={INK} strokeWidth="1" strokeLinejoin="round">
+        <path d="M232 146 Q 244 130 258 142 Q 268 150 258 152 L 232 152 Z" />
+        <path d="M248 164 Q 260 152 272 162 Q 282 170 272 172 L 248 172 Z" />
+      </g>
+
+      {/* === WALKER (from behind, left of path) === */}
+      <g>
+        {/* Shadow on path */}
+        <ellipse cx="124" cy="178" rx="18" ry="3" fill={SHADOW} opacity="0.4" />
+
+        {/* Legs — mid stride, from behind */}
+        <g fill={CREAM} stroke={INK} strokeWidth="1.5" strokeLinejoin="round">
+          <path d="M118 132 Q 114 150 112 174 L 118 178 L 122 174 L 124 150 Z" />
+          <path d="M128 132 Q 132 150 136 174 L 128 178 L 122 174 L 124 150 Z" />
         </g>
-        {/* Little "sent" tick */}
-        <g
-          transform="translate(56 56)"
-          fill="none"
-          stroke="#0E1C2F"
-          strokeWidth="1.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="4" cy="4" r="4" fill="#D8E86B" />
-          <path d="M2 4 L 3.5 5.5 L 6 2.5" />
-        </g>
-        {/* Little string pinning photo to the top */}
+        {/* Shoes */}
+        <path d="M112 176 L 122 178 L 120 180 L 112 180 Z" fill={INK} />
+        <path d="M128 178 L 138 176 L 138 180 L 130 180 Z" fill={INK} />
+
+        {/* Shorts */}
         <path
-          d="M34 0 L 34 -14"
-          stroke="#0E1C2F"
+          d="M114 120 L 134 120 L 136 136 L 112 136 Z"
+          fill={INK}
+          opacity="0.85"
+        />
+
+        {/* Torso — t-shirt */}
+        <path
+          d="M106 86 Q 108 108 112 122 L 136 122 Q 140 108 142 86 Q 136 80 124 80 Q 112 80 106 86 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        {/* Back shoulder blade hint */}
+        <path d="M118 92 Q 118 100 118 108" stroke={SHADOW} strokeWidth="0.8" fill="none" opacity="0.7" />
+        <path d="M130 92 Q 130 100 130 108" stroke={SHADOW} strokeWidth="0.8" fill="none" opacity="0.7" />
+
+        {/* Arms — one down, one holding leash */}
+        <path d="M108 90 Q 100 108 100 124" stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round" />
+        <path d="M140 90 Q 148 102 150 118" stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round" />
+
+        {/* Head from behind — cap */}
+        <path
+          d="M114 60 Q 114 48 124 48 Q 134 48 134 60 L 134 76 Q 134 82 124 82 Q 114 82 114 76 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        {/* Cap */}
+        <path d="M112 58 Q 118 50 136 56 L 138 62 Q 124 60 112 62 Z" fill={INK} />
+        {/* Hair at nape */}
+        <path d="M118 76 Q 124 80 130 76" stroke={INK} strokeWidth="1.2" fill="none" />
+      </g>
+
+      {/* === LEASH === from walker's hand to dog's collar */}
+      <path
+        d="M150 118 Q 168 128 186 138 Q 200 144 212 148"
+        stroke={INK}
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+
+      {/* === DOG === from 3/4 behind, ahead on the path */}
+      <g>
+        {/* Shadow */}
+        <ellipse cx="222" cy="182" rx="22" ry="2.5" fill={SHADOW} opacity="0.5" />
+
+        {/* Dog body — trotting */}
+        <path
+          d="M198 160 Q 194 148 202 142 Q 216 136 234 142 Q 246 146 246 160 L 244 174 Q 240 178 236 176 L 212 176 Q 208 178 204 176 Q 198 174 198 160 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        {/* Legs */}
+        <g stroke={INK} strokeWidth="1.5" fill={CREAM} strokeLinejoin="round">
+          <path d="M206 170 L 204 182 L 210 182 L 212 170 Z" />
+          <path d="M218 170 L 216 182 L 222 182 L 224 170 Z" />
+          <path d="M230 170 L 228 182 L 234 182 L 236 170 Z" />
+          <path d="M242 170 L 240 182 L 246 182 L 246 170 Z" />
+        </g>
+
+        {/* Head — looking back a little, 3/4 */}
+        <path
+          d="M196 150 Q 190 142 196 134 Q 204 128 214 134 Q 218 142 214 150 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+        {/* Ear flopping */}
+        <path
+          d="M200 134 Q 204 128 210 132 Q 212 140 206 142"
+          fill={SHADOW}
+          stroke={INK}
+          strokeWidth="1.2"
+        />
+        {/* Snout hint */}
+        <path d="M196 144 Q 192 146 194 150" stroke={INK} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        {/* Eye */}
+        <circle cx="202" cy="142" r="1.2" fill={INK} />
+
+        {/* Collar */}
+        <path d="M208 148 Q 212 152 208 154" stroke={INK} strokeWidth="2" fill="none" strokeLinecap="round" />
+
+        {/* Tail — raised and curled, happy */}
+        <path
+          d="M244 148 Q 256 138 254 124 Q 252 116 260 112"
+          stroke={INK}
+          strokeWidth="2.2"
+          fill="none"
+          strokeLinecap="round"
+        />
+      </g>
+
+      {/* === PHONE UPDATE === floating from top, pinned by dashed string */}
+      <g transform="translate(28 14)">
+        {/* Pin string */}
+        <path
+          d="M42 0 L 42 -4"
+          stroke={INK}
           strokeWidth="1"
           strokeDasharray="2 2"
           fill="none"
         />
+        {/* Phone body */}
+        <rect
+          x="26"
+          y="0"
+          width="32"
+          height="56"
+          rx="5"
+          fill={INK}
+        />
+        {/* Screen */}
+        <rect x="28" y="5" width="28" height="46" rx="2" fill={BONE} />
+        {/* Status bar */}
+        <rect x="38" y="7" width="8" height="1.4" rx="0.7" fill={INK} opacity="0.4" />
+        {/* Chat header "Rex" */}
+        <text
+          x="42"
+          y="16"
+          textAnchor="middle"
+          fontSize="4"
+          fontFamily="Fraunces, serif"
+          fontStyle="italic"
+          fill={INK}
+        >
+          Rex
+        </text>
+        <path d="M30 18 L 54 18" stroke={INK} strokeWidth="0.5" opacity="0.3" />
+        {/* Photo thumbnail in the chat */}
+        <rect x="31" y="21" width="22" height="18" rx="1.5" fill={LIME} />
+        {/* Simple dog-head silhouette in the photo */}
+        <g fill={INK}>
+          <ellipse cx="42" cy="32" rx="6" ry="4" />
+          <ellipse cx="46" cy="27" rx="2" ry="2.5" />
+          <ellipse cx="38" cy="27" rx="2" ry="2.5" />
+        </g>
+        {/* Message bubble underneath */}
+        <path
+          d="M31 42 Q 29 42 29 44 L 29 48 Q 29 50 31 50 L 50 50 Q 52 50 52 48 L 52 44 Q 52 42 50 42 Z"
+          fill={CREAM}
+          stroke={INK}
+          strokeWidth="0.5"
+        />
+        <path d="M32 45 L 48 45 M 32 47 L 44 47" stroke={INK} strokeWidth="0.4" opacity="0.6" />
       </g>
     </svg>
   );
