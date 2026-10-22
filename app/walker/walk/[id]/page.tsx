@@ -177,19 +177,22 @@ export default function WalkerWalkDetail() {
   }
 
   const isScheduled = !!walk.scheduled_for;
+  // Fallback for the (rare) case where RLS blocks dog name lookup; keeps
+  // the UI readable instead of printing "undefined"
+  const dogName = walk.dog_name || "the dog";
 
   // Headline that reads like a line in the walker's day
   const headline =
     walk.status === "pending"
       ? isScheduled
-        ? `Walk ${walk.dog_name} ${fmtSchedule(walk.scheduled_for!)}?`
-        : `Walk ${walk.dog_name}?`
+        ? `Walk ${dogName} ${fmtSchedule(walk.scheduled_for!)}?`
+        : `Walk ${dogName}?`
       : walk.status === "accepted"
         ? isScheduled
-          ? `Reserved — ${walk.dog_name} ${fmtSchedule(walk.scheduled_for!)}.`
-          : `On your way to ${walk.dog_name}.`
+          ? `Reserved — ${dogName} ${fmtSchedule(walk.scheduled_for!)}.`
+          : `On your way to ${dogName}.`
         : walk.status === "in_progress"
-          ? `Walking ${walk.dog_name}.`
+          ? `Walking ${dogName}.`
           : walk.status === "completed"
             ? `Walk completed.`
             : `Walk cancelled.`;
@@ -219,10 +222,11 @@ export default function WalkerWalkDetail() {
             </div>
             <div className="flex-1">
               <div className="font-serif text-lg leading-tight">
-                {walk.dog_name}
+                {dogName}
               </div>
               <div className="text-xs text-stone">
-                {walk.dog_breed || "Mixed"} · owner {walk.owner_name}
+                {walk.dog_breed || "Mixed breed"} · owner{" "}
+                {walk.owner_name || "Owner"}
               </div>
             </div>
             {isMine && walk.status !== "completed" && walk.status !== "cancelled" && (

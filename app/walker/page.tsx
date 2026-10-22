@@ -200,7 +200,7 @@ export default function WalkerHome() {
                       : "You accepted a walk"}
                   </div>
                   <div className="mt-1.5 font-serif text-lg text-midnight">
-                    {active.dog_name} · {active.area}
+                    {active.dog_name || "The dog"} · {active.area}
                   </div>
                   <div className="mt-0.5 text-sm text-midnight/70">
                     {active.duration_min} min · AED {active.price_aed}
@@ -242,9 +242,9 @@ export default function WalkerHome() {
                   >
                     <div>
                       <div className="font-medium">
-                        {w.dog_name}{" "}
+                        {w.dog_name || "A dog"}{" "}
                         <span className="font-normal text-stone">
-                          · {w.dog_breed || "Mixed"}
+                          · {w.dog_breed || "Mixed breed"}
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-stone">
@@ -281,7 +281,7 @@ export default function WalkerHome() {
                   className="flex items-center justify-between px-4 py-3"
                 >
                   <div>
-                    <div className="font-medium">{w.dog_name}</div>
+                    <div className="font-medium">{w.dog_name || "A dog"}</div>
                     <div className="text-xs text-stone">
                       {w.area} · {w.duration_min} min
                     </div>
