@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  ageFromDOB,
   getProfile,
   getReviewsForWalker,
   getWalkerProfile,
@@ -94,6 +95,12 @@ export default function WalkerPublicProfile() {
               </span>
             ) : (
               <span>New walker</span>
+            )}
+            {ageFromDOB(wp?.date_of_birth) !== null && (
+              <>
+                <span className="text-chalk">·</span>
+                <span>{ageFromDOB(wp?.date_of_birth)} years old</span>
+              </>
             )}
             {p.area && (
               <>

@@ -5,11 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import {
   addDog,
+  ageFromDOB,
   createProfile,
   DUBAI_AREAS,
   Role,
   signUpWithEmail,
   signInWithEmail,
+  upsertMyWalkerProfile,
 } from "@/lib/db";
 import { Button, Field, Header, inputCls, PawIcon } from "@/components/UI";
 
@@ -86,6 +88,9 @@ function SignupForm({ role }: { role: Role }) {
   const [breed, setBreed] = useState("");
   const [size, setSize] = useState<"small" | "medium" | "large">("medium");
 
+  // Walker-only: date of birth. Stored as YYYY-MM-DD; age derived from it.
+  const [dob, setDob] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -99,6 +104,26 @@ function SignupForm({ role }: { role: Role }) {
     if (password.length < 6) {
       setErr("Password must be at least 6 characters.");
       return;
+    }
+    // Walker-only: validate DOB — must be a real date and at least 18 years old
+    if (role === "walker") {
+      if (!dob) {
+        setErr("Please enter your date of birth.");
+        return;
+      }
+      const years = ageFromDOB(dob);
+      if (years === null) {
+        setErr("Please enter a valid date of birth.");
+        return;
+      }
+      if (years < 18) {
+        setErr("Walkers must be at least 18.");
+        return;
+      }
+      if (years > 100) {
+        setErr("Please check the date of birth.");
+        return;
+      }
     }
     setLoading(true);
     try {
@@ -131,6 +156,16 @@ function SignupForm({ role }: { role: Role }) {
           breed: breed.trim() || "Mixed",
           size,
         });
+      }
+
+      if (role === "walker" && dob) {
+        // Walker profile row was just auto-created inside createProfile;
+        // tack the date of birth on so age is available on the public page
+        try {
+          await upsertMyWalkerProfile({ date_of_birth: dob });
+        } catch {
+          // Non-fatal — walker can set it later on the edit screen
+        }
       }
 
       router.replace(role === "owner" ? "/owner" : "/walker");
@@ -263,10 +298,31 @@ function SignupForm({ role }: { role: Role }) {
         )}
 
         {role === "walker" && (
-          <div className="rounded-2xl border border-paper bg-bone p-4 text-sm text-midnight/80">
-            After signup, complete your walker profile — a photo and a few lines
-            about yourself. Owners book walkers they can see.
-          </div>
+          <>
+            <Field
+              label="Date of birth"
+              hint="You must be 18 or older. Owners see your age on your profile."
+            >
+              <input
+                type="date"
+                className={inputCls}
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                max={maxDOB()}
+                required
+              />
+              {dob && ageFromDOB(dob) !== null && (
+                <span className="mt-1 block text-xs text-stone">
+                  You&apos;ll be shown as <strong>{ageFromDOB(dob)}</strong>.
+                </span>
+              )}
+            </Field>
+
+            <div className="rounded-2xl border border-paper bg-bone p-4 text-sm text-midnight/80">
+              After signup, complete your walker profile — a photo and a few
+              lines about yourself. Owners book walkers they can see.
+            </div>
+          </>
         )}
 
         {err && (
@@ -297,6 +353,15 @@ function SignupInner() {
   if (!role) return <RolePicker />;
   if (role !== "owner" && role !== "walker") return <RolePicker />;
   return <SignupForm role={role} />;
+}
+
+// Latest DOB that still makes the signer 18 years old today — used as the
+// `max` on the <input type="date"> so under-18s can't pick a too-recent year.
+function maxDOB(): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 export default function SignupPage() {

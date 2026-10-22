@@ -68,8 +68,24 @@ export type WalkerProfile = {
   id_verified: boolean;
   rating_avg: number | null;
   rating_count: number;
+  // Age calculated from this; stored instead of raw age so it doesn't go stale
+  date_of_birth: string | null;
   updated_at: string;
 };
+
+/** Compute an age in whole years from an ISO date string. */
+export function ageFromDOB(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const dob = new Date(iso);
+  if (Number.isNaN(dob.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const beforeBirthday =
+    now.getMonth() < dob.getMonth() ||
+    (now.getMonth() === dob.getMonth() && now.getDate() < dob.getDate());
+  if (beforeBirthday) age -= 1;
+  return age >= 0 ? age : null;
+}
 
 export const DUBAI_AREAS = [
   "Dubai Marina",

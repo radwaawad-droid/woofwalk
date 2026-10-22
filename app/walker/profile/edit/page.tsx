@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
+  ageFromDOB,
   DUBAI_AREAS,
   getMyProfile,
   getMyWalkerProfile,
@@ -29,6 +30,7 @@ export default function WalkerProfileEdit() {
   const [langs, setLangs] = useState<string[]>([]);
   const [areas, setAreas] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [dob, setDob] = useState<string>("");
 
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -56,6 +58,7 @@ export default function WalkerProfileEdit() {
         setLangs(wpr.languages || []);
         setAreas(wpr.areas_served || (p.area ? [p.area] : []));
         setPhotoUrl(wpr.photo_url);
+        setDob(wpr.date_of_birth || "");
       } else if (p.area) {
         setAreas([p.area]);
       }
@@ -101,6 +104,7 @@ export default function WalkerProfileEdit() {
         languages: langs.length ? langs : null,
         areas_served: areas.length ? areas : null,
         photo_url: photoUrl,
+        date_of_birth: dob || null,
       });
       setMsg("Saved.");
       setTimeout(() => setMsg(null), 2000);
@@ -193,6 +197,24 @@ export default function WalkerProfileEdit() {
               inputMode="tel"
               placeholder="+971 50 123 4567"
             />
+          </Field>
+
+          <Field
+            label="Date of birth"
+            hint="Shown as your age on your profile."
+          >
+            <input
+              type="date"
+              className={inputCls}
+              value={dob}
+              onChange={(e) => setDob(e.target.value)}
+              max={eighteenYearsAgo()}
+            />
+            {dob && ageFromDOB(dob) !== null && (
+              <span className="mt-1 block text-xs text-stone">
+                You&apos;ll show as <strong>{ageFromDOB(dob)}</strong>.
+              </span>
+            )}
           </Field>
         </section>
 
@@ -341,4 +363,11 @@ function ChipGroup({
       })}
     </div>
   );
+}
+
+function eighteenYearsAgo(): string {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
