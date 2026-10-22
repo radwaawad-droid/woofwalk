@@ -42,6 +42,13 @@ export default function RequestWalk() {
     size: "small" | "medium" | "large";
   }>({ name: "", breed: "", size: "medium" });
 
+  // Scheduling: 'now' = on-demand, 'later' = pick a datetime
+  const [when, setWhen] = useState<"now" | "later">("now");
+  // Default scheduled datetime: tomorrow at 08:00 local, in the input's required format
+  const [scheduledLocal, setScheduledLocal] = useState<string>(() =>
+    defaultTomorrowMorning(),
+  );
+
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -88,6 +95,20 @@ export default function RequestWalk() {
       setErr("Set a price of at least AED 30.");
       return;
     }
+    let scheduledIso: string | null = null;
+    if (when === "later") {
+      // The datetime-local input gives us local wall-clock time; convert to UTC ISO
+      const d = new Date(scheduledLocal);
+      if (Number.isNaN(d.getTime())) {
+        setErr("Pick a valid date and time.");
+        return;
+      }
+      if (d.getTime() < Date.now() + 5 * 60_000) {
+        setErr("Schedule at least 5 minutes in the future.");
+        return;
+      }
+      scheduledIso = d.toISOString();
+    }
     setSubmitting(true);
     try {
       const walk = await createWalk({
@@ -96,6 +117,7 @@ export default function RequestWalk() {
         address: address.trim(),
         duration_min: duration,
         price_aed: Math.round(price),
+        scheduled_for: scheduledIso,
       });
       router.replace(`/owner/walk/${walk.id}`);
     } catch (e: any) {
@@ -264,6 +286,55 @@ export default function RequestWalk() {
           />
         </section>
 
+        {/* When */}
+        <section>
+          <SectionLabel>When</SectionLabel>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setWhen("now")}
+              className={`rounded-full border py-3 text-sm font-medium transition ${
+                when === "now"
+                  ? "border-midnight bg-midnight text-bone"
+                  : "border-chalk bg-bone text-midnight hover:border-midnight"
+              }`}
+            >
+              Right now
+            </button>
+            <button
+              type="button"
+              onClick={() => setWhen("later")}
+              className={`rounded-full border py-3 text-sm font-medium transition ${
+                when === "later"
+                  ? "border-midnight bg-midnight text-bone"
+                  : "border-chalk bg-bone text-midnight hover:border-midnight"
+              }`}
+            >
+              Schedule
+            </button>
+          </div>
+          {when === "later" && (
+            <div className="mt-3 rounded-2xl border border-paper bg-paper/40 p-4">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-stone">
+                  Date & time
+                </span>
+                <input
+                  type="datetime-local"
+                  className={inputCls}
+                  value={scheduledLocal}
+                  onChange={(e) => setScheduledLocal(e.target.value)}
+                  min={minScheduleLocal()}
+                  required
+                />
+              </label>
+              <p className="mt-2 text-xs text-stone">
+                Walkers see scheduled walks ahead of time and reserve them.
+              </p>
+            </div>
+          )}
+        </section>
+
         {/* Duration */}
         <section>
           <SectionLabel>Duration</SectionLabel>
@@ -380,6 +451,25 @@ function SectionLabel({
       {hint && <span className="text-xs text-stone">{hint}</span>}
     </div>
   );
+}
+
+// Format a Date as the string a <input type="datetime-local"> wants:
+// YYYY-MM-DDTHH:MM in the device's local timezone (not UTC)
+function toLocalInput(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function defaultTomorrowMorning(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(8, 0, 0, 0);
+  return toLocalInput(d);
+}
+
+function minScheduleLocal(): string {
+  const d = new Date(Date.now() + 5 * 60_000);
+  return toLocalInput(d);
 }
 
 function SegmentedGroup({

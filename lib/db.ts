@@ -41,6 +41,8 @@ export type Walk = {
   price_aed: number;
   status: WalkStatus;
   photo_count: number;
+  // null = on-demand (right now); set = scheduled for this time
+  scheduled_for: string | null;
   created_at: string;
   accepted_at: string | null;
   started_at: string | null;
@@ -341,6 +343,7 @@ export async function createWalk(input: {
   address: string;
   duration_min: number;
   price_aed: number;
+  scheduled_for?: string | null;
 }): Promise<Walk> {
   const id = await currentUserId();
   if (!id) throw new Error("Not signed in");
@@ -354,6 +357,7 @@ export async function createWalk(input: {
       address: input.address,
       duration_min: input.duration_min,
       price_aed: input.price_aed,
+      scheduled_for: input.scheduled_for ?? null,
     })
     .select()
     .single();

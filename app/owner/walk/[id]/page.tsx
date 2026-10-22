@@ -33,6 +33,29 @@ function fmtTime(ts?: string | null) {
   });
 }
 
+function fmtSchedule(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const t = d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (sameDay) return `today ${t}`;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (
+    d.getFullYear() === tomorrow.getFullYear() &&
+    d.getMonth() === tomorrow.getMonth() &&
+    d.getDate() === tomorrow.getDate()
+  )
+    return `tomorrow ${t}`;
+  return `${d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} ${t}`;
+}
+
 export default function OwnerWalkDetail() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -114,12 +137,18 @@ export default function OwnerWalkDetail() {
     router.replace("/owner");
   }
 
+  const isScheduled = !!walk.scheduled_for;
+
   // Human-friendly status line
   const statusLine =
     walk.status === "pending"
-      ? "Looking for a walker"
+      ? isScheduled
+        ? `Scheduled for ${fmtSchedule(walk.scheduled_for!)}`
+        : "Looking for a walker"
       : walk.status === "accepted"
-        ? `${walk.walker_name || "Walker"} is on the way`
+        ? isScheduled
+          ? `${walk.walker_name || "Walker"} will arrive at ${fmtSchedule(walk.scheduled_for!)}`
+          : `${walk.walker_name || "Walker"} is on the way`
         : walk.status === "in_progress"
           ? `${walk.walker_name || "Walker"} is walking ${walk.dog_name}`
           : walk.status === "completed"
@@ -145,9 +174,19 @@ export default function OwnerWalkDetail() {
         {walk.status === "pending" && (
           <Card tone="warn">
             <p className="text-sm text-midnight/80">
-              Looking for a walker near{" "}
-              <span className="font-medium">{walk.area}</span>. We&apos;ll let
-              you know the moment someone accepts.
+              {isScheduled ? (
+                <>
+                  Walkers near{" "}
+                  <span className="font-medium">{walk.area}</span> can see this
+                  and reserve it. We&apos;ll let you know when one does.
+                </>
+              ) : (
+                <>
+                  Looking for a walker near{" "}
+                  <span className="font-medium">{walk.area}</span>. We&apos;ll
+                  let you know the moment someone accepts.
+                </>
+              )}
             </p>
           </Card>
         )}

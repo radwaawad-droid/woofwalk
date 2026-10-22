@@ -24,6 +24,29 @@ function timeAgo(ts: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function fmtSchedule(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const t = d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (sameDay) return `today ${t}`;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (
+    d.getFullYear() === tomorrow.getFullYear() &&
+    d.getMonth() === tomorrow.getMonth() &&
+    d.getDate() === tomorrow.getDate()
+  )
+    return `tomorrow ${t}`;
+  return `${d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} ${t}`;
+}
+
 export default function WalkerHome() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -207,35 +230,42 @@ export default function WalkerHome() {
           />
         ) : (
           <ul className="divide-y divide-paper rounded-2xl border border-paper">
-            {open.map((w) => (
-              <li key={w.id}>
-                <Link
-                  href={`/walker/walk/${w.id}`}
-                  className="flex items-start justify-between gap-3 px-4 py-4 transition hover:bg-paper/40"
-                >
-                  <div>
-                    <div className="font-medium">
-                      {w.dog_name}{" "}
-                      <span className="font-normal text-stone">
-                        · {w.dog_breed || "Mixed"}
-                      </span>
+            {open.map((w) => {
+              const isScheduled = !!w.scheduled_for;
+              return (
+                <li key={w.id}>
+                  <Link
+                    href={`/walker/walk/${w.id}`}
+                    className="flex items-start justify-between gap-3 px-4 py-4 transition hover:bg-paper/40"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {w.dog_name}{" "}
+                        <span className="font-normal text-stone">
+                          · {w.dog_breed || "Mixed"}
+                        </span>
+                      </div>
+                      <div className="mt-0.5 text-xs text-stone">
+                        {w.area} · {w.duration_min} min
+                      </div>
+                      <div className="mt-1 text-xs text-stone/80">
+                        {isScheduled
+                          ? `Scheduled · ${fmtSchedule(w.scheduled_for!)}`
+                          : timeAgo(w.created_at)}
+                      </div>
                     </div>
-                    <div className="mt-0.5 text-xs text-stone">
-                      {w.area} · {w.duration_min} min
+                    <div className="text-right">
+                      <div className="font-serif text-lg tracking-tightest">
+                        AED {w.price_aed}
+                      </div>
+                      <Badge tone={isScheduled ? "info" : "accent"}>
+                        {isScheduled ? "Scheduled" : "Now"}
+                      </Badge>
                     </div>
-                    <div className="mt-1 text-xs text-stone/80">
-                      {timeAgo(w.created_at)}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-serif text-lg tracking-tightest">
-                      AED {w.price_aed}
-                    </div>
-                    <Badge tone="accent">New</Badge>
-                  </div>
-                </Link>
-              </li>
-            ))}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
 

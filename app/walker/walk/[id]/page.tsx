@@ -34,6 +34,29 @@ function fmtTime(ts?: string | null) {
   });
 }
 
+function fmtSchedule(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const t = d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (sameDay) return `today ${t}`;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (
+    d.getFullYear() === tomorrow.getFullYear() &&
+    d.getMonth() === tomorrow.getMonth() &&
+    d.getDate() === tomorrow.getDate()
+  )
+    return `tomorrow ${t}`;
+  return `${d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} ${t}`;
+}
+
 export default function WalkerWalkDetail() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -147,12 +170,18 @@ export default function WalkerWalkDetail() {
     }
   }
 
+  const isScheduled = !!walk.scheduled_for;
+
   // Headline that reads like a line in the walker's day
   const headline =
     walk.status === "pending"
-      ? `Walk ${walk.dog_name}?`
+      ? isScheduled
+        ? `Walk ${walk.dog_name} ${fmtSchedule(walk.scheduled_for!)}?`
+        : `Walk ${walk.dog_name}?`
       : walk.status === "accepted"
-        ? `On your way to ${walk.dog_name}.`
+        ? isScheduled
+          ? `Reserved — ${walk.dog_name} ${fmtSchedule(walk.scheduled_for!)}.`
+          : `On your way to ${walk.dog_name}.`
         : walk.status === "in_progress"
           ? `Walking ${walk.dog_name}.`
           : walk.status === "completed"

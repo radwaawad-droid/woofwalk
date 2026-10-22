@@ -35,6 +35,29 @@ function timeAgo(ts: string) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+function fmtSchedule(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const t = d.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  if (sameDay) return `today ${t}`;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  if (
+    d.getFullYear() === tomorrow.getFullYear() &&
+    d.getMonth() === tomorrow.getMonth() &&
+    d.getDate() === tomorrow.getDate()
+  )
+    return `tomorrow ${t}`;
+  return `${d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} ${t}`;
+}
+
 export default function OwnerHome() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -188,7 +211,9 @@ export default function OwnerHome() {
                         {w.area} · {w.duration_min} min · AED {w.price_aed}
                       </div>
                       <div className="mt-1 text-xs text-stone/80">
-                        {timeAgo(w.created_at)}
+                        {w.scheduled_for
+                          ? `Scheduled · ${fmtSchedule(w.scheduled_for)}`
+                          : timeAgo(w.created_at)}
                       </div>
                     </div>
                     <Badge tone={statusTone(w.status)}>
