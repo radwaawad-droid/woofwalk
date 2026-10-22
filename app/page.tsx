@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMyProfile } from "@/lib/db";
 import { Button, PawIcon, Wordmark } from "@/components/UI";
@@ -78,36 +78,14 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* How it works — hand-drawn story */}
-      <section className="mt-16 px-5">
-        <div className="mb-6 flex items-baseline justify-between">
+      {/* How it works — swipeable story strip */}
+      <section className="mt-16">
+        <div className="mb-5 flex items-baseline justify-between px-5">
           <h2 className="font-serif text-lg font-medium">How it works</h2>
           <span className="text-xs text-stone">30 min from AED 70</span>
         </div>
 
-        <ol className="space-y-10">
-          <StoryTile
-            index="One"
-            title="Tell us about your dog"
-            body="Breed, size, a quirk or two. We keep it on file so you don't retype it next time."
-            image="/story/scene-dog.jpg"
-            alt="A golden retriever waiting by the door, leash hanging on a hook beside it"
-          />
-          <StoryTile
-            index="Two"
-            title="A nearby walker accepts"
-            body="You see their photo, rating and bio before they arrive. Only vetted walkers in the pool."
-            image="/story/scene-walker.jpg"
-            alt="A walker in Dubai approaching with their phone, a green map pin on the screen"
-          />
-          <StoryTile
-            index="Three"
-            title="Photos, a note, pay at the finish"
-            body="Updates mid-walk, a short report at the end. Your card is charged only once the walk is done."
-            image="/story/scene-walk.jpg"
-            alt="A walker and golden retriever on a Dubai promenade at sunrise, a photo message floating overhead"
-          />
-        </ol>
+        <StoryStrip />
       </section>
 
       {/* Walker invite — flipped palette so it reads as a different audience */}
@@ -150,43 +128,142 @@ export default function Landing() {
   );
 }
 
-function StoryTile({
-  index,
-  title,
-  body,
-  image,
-  alt,
-}: {
+type Story = {
   index: string;
   title: string;
   body: string;
   image: string;
   alt: string;
-}) {
+};
+
+const STORIES: Story[] = [
+  {
+    index: "One",
+    title: "Tell us about your dog",
+    body: "Breed, size, a quirk or two. On file so you don't retype it.",
+    image: "/story/scene-dog.jpg",
+    alt: "A golden retriever waiting by the door, leash on a hook",
+  },
+  {
+    index: "Two",
+    title: "A nearby walker accepts",
+    body: "Photo, rating and bio before they arrive. Vetted walkers only.",
+    image: "/story/scene-walker.jpg",
+    alt: "A walker in Dubai approaching with a map pin on their phone",
+  },
+  {
+    index: "Three",
+    title: "Pay when it's done",
+    body: "Photos mid-walk, a short report at the end. Card charged on finish.",
+    image: "/story/scene-walk.jpg",
+    alt: "A walker and golden retriever on a Dubai promenade at sunrise",
+  },
+];
+
+function StoryStrip() {
+  const [active, setActive] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
+
+  // Track which card is in view
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Pick the entry with highest intersectionRatio among currently intersecting
+        let best: IntersectionObserverEntry | null = null;
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
+        }
+        if (best) {
+          const idx = Number((best.target as HTMLElement).dataset.index);
+          if (!Number.isNaN(idx)) setActive(idx);
+        }
+      },
+      {
+        root: scroller,
+        threshold: [0.55, 0.75, 1],
+      },
+    );
+    itemRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
+  function scrollToIndex(i: number) {
+    const el = itemRefs.current[i];
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }
+
   return (
-    <li>
-      {/* Illustration — a painted scene, full-bleed in a soft paper frame */}
-      <div className="relative overflow-hidden rounded-[28px] border border-paper bg-paper/40">
-        <div className="absolute left-5 top-4 z-10 rounded-full bg-bone/80 px-2.5 py-0.5 font-serif text-sm italic text-stone backdrop-blur-sm">
-          {index}
-        </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={image}
-          alt={alt}
-          className="block aspect-square w-full object-cover"
-          loading="lazy"
-        />
+    <>
+      {/* Horizontal, snap-scroll strip */}
+      <div
+        ref={scrollerRef}
+        className="scrollbar-hide snap-x snap-mandatory overflow-x-auto"
+        style={{
+          scrollPaddingLeft: 20,
+          scrollPaddingRight: 20,
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        <ol className="flex gap-3 px-5 pb-2">
+          {STORIES.map((s, i) => (
+            <li
+              key={s.index}
+              data-index={i}
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
+              className="w-[72vw] max-w-[280px] shrink-0 snap-center"
+            >
+              {/* Illustration */}
+              <div className="relative overflow-hidden rounded-[22px] border border-paper bg-paper/40">
+                <div className="absolute left-4 top-3 z-10 rounded-full bg-bone/85 px-2.5 py-0.5 font-serif text-xs italic text-stone backdrop-blur-sm">
+                  {s.index}
+                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={s.image}
+                  alt={s.alt}
+                  className="block aspect-square w-full object-cover"
+                  loading={i === 0 ? "eager" : "lazy"}
+                  draggable={false}
+                />
+              </div>
+              {/* Caption */}
+              <div className="mt-3 px-0.5">
+                <h3 className="font-serif text-base leading-snug text-midnight">
+                  {s.title}
+                </h3>
+                <p className="mt-1 text-[13px] leading-relaxed text-midnight/70">
+                  {s.body}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
-      {/* Caption */}
-      <div className="mt-4 px-1">
-        <h3 className="font-serif text-xl leading-snug text-midnight">
-          {title}
-        </h3>
-        <p className="mt-1.5 text-sm leading-relaxed text-midnight/70">
-          {body}
-        </p>
+
+      {/* Pagination — tappable dots */}
+      <div className="mt-3 flex items-center justify-center gap-2">
+        {STORIES.map((_, i) => {
+          const isActive = i === active;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => scrollToIndex(i)}
+              aria-label={`Go to step ${i + 1}`}
+              className={`h-1.5 rounded-full transition-all ${
+                isActive ? "w-6 bg-midnight" : "w-1.5 bg-chalk"
+              }`}
+            />
+          );
+        })}
       </div>
-    </li>
+    </>
   );
 }

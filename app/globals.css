@@ -51,3 +51,7 @@ body { overscroll-behavior-y: none; }
 .paper-input::placeholder {
   color: #B8AF99;
 }
+
+/* Hide scrollbars on horizontal scroll strips, keep swipeability */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
