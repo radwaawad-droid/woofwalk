@@ -10,8 +10,10 @@ import {
   getReviewForWalk,
   getWalk,
   getWalkerProfile,
+  getWalkPhotos,
   Review,
   WalkerProfile,
+  WalkPhoto,
   WalkWithRefs,
 } from "@/lib/db";
 import { Badge, Button, Card, Header, PawIcon } from "@/components/UI";
@@ -37,6 +39,7 @@ export default function OwnerWalkDetail() {
   const [walk, setWalk] = useState<WalkWithRefs | null>(null);
   const [walkerProfile, setWalkerProfile] = useState<WalkerProfile | null>(null);
   const [review, setReview] = useState<Review | null>(null);
+  const [photos, setPhotos] = useState<WalkPhoto[]>([]);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
@@ -75,6 +78,12 @@ export default function OwnerWalkDetail() {
       getReviewForWalk(walk.id).then(setReview).catch(() => {});
     }
   }, [walk?.id, walk?.status, review]);
+
+  // Pull the latest photos whenever the walk's counter changes
+  useEffect(() => {
+    if (!walk) return;
+    getWalkPhotos(walk.id).then(setPhotos).catch(() => {});
+  }, [walk?.id, walk?.photo_count]);
 
   if (notFound) {
     return (
@@ -179,7 +188,7 @@ export default function OwnerWalkDetail() {
           </Link>
         )}
 
-        {/* In-progress strip — live indicator + map */}
+        {/* In-progress strip — live indicator + map + photos */}
         {walk.status === "in_progress" && (
           <Card tone="dark">
             <div className="flex items-center justify-between">
@@ -194,13 +203,70 @@ export default function OwnerWalkDetail() {
             <div className="mt-4">
               <WalkMap walkId={walk.id} heightClass="h-56" />
             </div>
-            <div className="mt-4 flex items-center justify-between text-sm text-bone/80">
-              <span>Photos received</span>
-              <strong className="font-serif text-lg text-bone">
-                {walk.photo_count || 0}
-              </strong>
+            <div className="mt-5">
+              <div className="mb-2 flex items-center justify-between text-sm text-bone/80">
+                <span>Photos from the walk</span>
+                <strong className="font-serif text-lg text-bone">
+                  {photos.length}
+                </strong>
+              </div>
+              {photos.length === 0 ? (
+                <p className="rounded-xl border border-bone/15 bg-night px-3 py-3 text-xs text-bone/50">
+                  Your walker will share photos while they&apos;re out with
+                  {" "}
+                  {walk.dog_name}.
+                </p>
+              ) : (
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {photos.map((p) => (
+                    <a
+                      key={p.id}
+                      href={p.photo_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.photo_url}
+                        alt={`Photo of ${walk.dog_name}`}
+                        className="h-24 w-24 rounded-xl object-cover ring-1 ring-bone/15"
+                        loading="lazy"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </Card>
+        )}
+
+        {/* Completed walk: show the album the walker sent, if any */}
+        {walk.status === "completed" && photos.length > 0 && (
+          <section>
+            <h2 className="mb-3 font-serif text-base">
+              Photos from the walk
+            </h2>
+            <div className="grid grid-cols-3 gap-2">
+              {photos.map((p) => (
+                <a
+                  key={p.id}
+                  href={p.photo_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="relative block aspect-square overflow-hidden rounded-xl border border-paper"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={p.photo_url}
+                    alt={`Photo of ${walk.dog_name}`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                </a>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Completed state — either prompt to rate, or show the submitted rating */}

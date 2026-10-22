@@ -507,6 +507,104 @@ export async function bumpPhoto(walkId: string) {
   if (error) throw error;
 }
 
+// ---------------- Walk photos (real uploads during a walk) ----------------
+
+export type WalkPhoto = {
+  id: string;
+  walk_id: string;
+  photo_url: string;
+  created_at: string;
+};
+
+/**
+ * Upload one photo during an in-progress walk. Compresses on the client to
+ * keep storage small and uploads to the walk-photos public bucket; then
+ * inserts a walk_photos row and bumps walks.photo_count so existing UI
+ * tracking the count keeps working.
+ */
+export async function uploadWalkPhoto(
+  walkId: string,
+  file: File,
+): Promise<WalkPhoto> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Not signed in");
+  const sb = getSupabase();
+  const compressed = await compressImage(file, 1600, 0.82);
+  const ext = "jpg"; // we always re-encode to JPEG
+  const path = `${walkId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+  const { error: upErr } = await sb.storage
+    .from("walk-photos")
+    .upload(path, compressed, {
+      upsert: false,
+      contentType: "image/jpeg",
+      cacheControl: "3600",
+    });
+  if (upErr) throw upErr;
+  const { data: pub } = sb.storage.from("walk-photos").getPublicUrl(path);
+  const photoUrl = pub.publicUrl;
+  const { data, error } = await sb
+    .from("walk_photos")
+    .insert({ walk_id: walkId, photo_url: photoUrl })
+    .select()
+    .single();
+  if (error) throw error;
+  // Keep walks.photo_count in sync so UI that only reads the count still updates
+  await bumpPhoto(walkId).catch(() => {});
+  return data as WalkPhoto;
+}
+
+export async function getWalkPhotos(walkId: string): Promise<WalkPhoto[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("walk_photos")
+    .select("*")
+    .eq("walk_id", walkId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data as WalkPhoto[]) || [];
+}
+
+/**
+ * Client-side image compression. Takes a user-selected File, re-encodes it
+ * to JPEG at the given quality, scaled so the long edge is at most maxDim.
+ * Falls back to the raw file if the browser lacks createImageBitmap/canvas.
+ */
+async function compressImage(
+  file: File,
+  maxDim: number,
+  quality: number,
+): Promise<Blob> {
+  try {
+    if (
+      typeof window === "undefined" ||
+      typeof createImageBitmap !== "function"
+    ) {
+      return file;
+    }
+    const bitmap = await createImageBitmap(file);
+    const longest = Math.max(bitmap.width, bitmap.height);
+    const scale = longest > maxDim ? maxDim / longest : 1;
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const blob: Blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error("toBlob returned null"))),
+        "image/jpeg",
+        quality,
+      );
+    });
+    return blob;
+  } catch {
+    return file;
+  }
+}
+
 // ---------------- Walker profile ----------------
 
 export async function getWalkerProfile(id: string): Promise<WalkerProfile | null> {
