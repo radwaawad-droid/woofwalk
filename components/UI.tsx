@@ -19,6 +19,26 @@ export function PawIcon({ className = "h-5 w-5" }: { className?: string }) {
   );
 }
 
+export function CameraIcon({ className = "h-5 w-5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <path
+        d="M4 8a2 2 0 0 1 2-2h2.2l1.1-1.6A2 2 0 0 1 11 3.6h2a2 2 0 0 1 1.7.9L15.8 6H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx="12"
+        cy="13"
+        r="3.4"
+        stroke="currentColor"
+        strokeWidth="1.7"
+      />
+    </svg>
+  );
+}
+
 export function BackIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>

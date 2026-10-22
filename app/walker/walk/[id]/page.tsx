@@ -15,7 +15,7 @@ import {
   WalkPhoto,
   WalkWithRefs,
 } from "@/lib/db";
-import { Button, Card, Header, PawIcon } from "@/components/UI";
+import { Button, CameraIcon, Card, Header, PawIcon } from "@/components/UI";
 import { WalkerLiveTracker } from "@/components/WalkerLiveTracker";
 
 // Mapbox GL uses window at import, so load it only in the browser.
@@ -43,7 +43,9 @@ export default function WalkerWalkDetail() {
   const [photos, setPhotos] = useState<WalkPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [photoErr, setPhotoErr] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  // Two inputs so the walker can choose between fresh camera shot and gallery pick
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -110,7 +112,8 @@ export default function WalkerWalkDetail() {
     }
   }
   async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const input = e.currentTarget;
+    const file = input.files?.[0];
     if (!file || !walk) return;
     setPhotoErr(null);
     setUploading(true);
@@ -128,7 +131,9 @@ export default function WalkerWalkDetail() {
       setPhotoErr(err?.message || "Could not send the photo. Try again.");
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
+      // Reset both inputs so the same file can be re-chosen
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
+      if (galleryInputRef.current) galleryInputRef.current.value = "";
     }
   }
   async function doEnd() {
@@ -247,26 +252,49 @@ export default function WalkerWalkDetail() {
                     ))}
                   </div>
                 )}
+                {/* Two hidden inputs: one asks the OS for the camera,
+                    the other for the gallery/file picker. */}
                 <input
-                  ref={fileRef}
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
                   onChange={onPickPhoto}
                   className="hidden"
                 />
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={onPickPhoto}
+                  className="hidden"
+                />
+
+                {/* Primary: open the camera */}
                 <button
                   type="button"
-                  onClick={() => fileRef.current?.click()}
+                  onClick={() => cameraInputRef.current?.click()}
                   disabled={uploading}
-                  className="w-full rounded-full border border-bone/40 bg-transparent px-5 py-3 text-sm font-medium text-bone transition hover:bg-bone hover:text-midnight disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-lime px-5 py-3 text-sm font-semibold text-midnight transition active:scale-[.98] disabled:opacity-60"
                 >
+                  <CameraIcon className="h-5 w-5" />
                   {uploading
                     ? "Sending…"
                     : photos.length === 0
-                      ? "Send the first photo"
-                      : "Send another photo"}
+                      ? "Take a photo"
+                      : "Take another photo"}
                 </button>
+
+                {/* Secondary: pick from gallery */}
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  disabled={uploading}
+                  className="mt-2 w-full rounded-full border border-bone/30 bg-transparent px-5 py-2.5 text-xs font-medium text-bone/80 transition hover:bg-bone/5 disabled:opacity-60"
+                >
+                  Or pick from gallery
+                </button>
+
                 {photoErr && (
                   <p className="mt-2 text-xs text-amber-200">{photoErr}</p>
                 )}
