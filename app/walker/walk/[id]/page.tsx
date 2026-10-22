@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -13,6 +14,15 @@ import {
   WalkWithRefs,
 } from "@/lib/db";
 import { Button, Card, Header, PawIcon } from "@/components/UI";
+import { WalkerLiveTracker } from "@/components/WalkerLiveTracker";
+
+// Mapbox GL uses window at import, so load it only in the browser.
+const WalkMap = dynamic(() => import("@/components/WalkMap").then((m) => m.WalkMap), {
+  ssr: false,
+  loading: () => (
+    <div className="h-56 w-full animate-pulse rounded-xl border border-bone/15 bg-night/60" />
+  ),
+});
 
 function fmtTime(ts?: string | null) {
   if (!ts) return "—";
@@ -162,35 +172,40 @@ export default function WalkerWalkDetail() {
 
         {/* In-progress panel */}
         {walk.status === "in_progress" && isMine && (
-          <Card tone="dark">
-            <div className="flex items-center justify-between">
-              <div className="text-xs uppercase tracking-wider text-lime">
-                Walking
+          <>
+            {/* Location sharing banner — asks permission, pushes GPS */}
+            <WalkerLiveTracker walkId={walk.id} active={true} />
+
+            <Card tone="dark">
+              <div className="flex items-center justify-between">
+                <div className="text-xs uppercase tracking-wider text-lime">
+                  Walking
+                </div>
+                <span className="flex items-center gap-1.5 text-xs text-lime">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-lime" />
+                  Live
+                </span>
               </div>
-              <span className="flex items-center gap-1.5 text-xs text-lime">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-lime" />
-                Tracking
-              </span>
-            </div>
-            <div className="mt-4 flex h-40 items-center justify-center rounded-xl border border-bone/15 bg-night text-sm text-bone/60">
-              GPS tracking arrives in a later update
-            </div>
-            <div className="mt-4 flex items-center justify-between text-sm text-bone/80">
-              <span>Photos sent</span>
-              <strong className="font-serif text-lg text-bone">
-                {walk.photo_count || 0}
-              </strong>
-            </div>
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={doPhoto}
-                className="w-full rounded-full border border-bone/40 bg-transparent px-5 py-3 text-sm font-medium text-bone transition hover:bg-bone hover:text-midnight"
-              >
-                Send a photo to the owner
-              </button>
-            </div>
-          </Card>
+              <div className="mt-4">
+                <WalkMap walkId={walk.id} heightClass="h-56" />
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm text-bone/80">
+                <span>Photos sent</span>
+                <strong className="font-serif text-lg text-bone">
+                  {walk.photo_count || 0}
+                </strong>
+              </div>
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={doPhoto}
+                  className="w-full rounded-full border border-bone/40 bg-transparent px-5 py-3 text-sm font-medium text-bone transition hover:bg-bone hover:text-midnight"
+                >
+                  Send a photo to the owner
+                </button>
+              </div>
+            </Card>
+          </>
         )}
 
         {/* Timeline — subtle */}

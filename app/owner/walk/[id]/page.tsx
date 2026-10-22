@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,6 +15,13 @@ import {
   WalkWithRefs,
 } from "@/lib/db";
 import { Badge, Button, Card, Header, PawIcon } from "@/components/UI";
+
+const WalkMap = dynamic(() => import("@/components/WalkMap").then((m) => m.WalkMap), {
+  ssr: false,
+  loading: () => (
+    <div className="h-56 w-full animate-pulse rounded-xl border border-bone/15 bg-night/60" />
+  ),
+});
 
 function fmtTime(ts?: string | null) {
   if (!ts) return "—";
@@ -171,7 +179,7 @@ export default function OwnerWalkDetail() {
           </Link>
         )}
 
-        {/* In-progress strip — live indicator */}
+        {/* In-progress strip — live indicator + map */}
         {walk.status === "in_progress" && (
           <Card tone="dark">
             <div className="flex items-center justify-between">
@@ -183,8 +191,8 @@ export default function OwnerWalkDetail() {
                 Live
               </span>
             </div>
-            <div className="mt-4 flex h-40 items-center justify-center rounded-xl border border-bone/15 bg-night text-sm text-bone/60">
-              Live map arrives in a later update
+            <div className="mt-4">
+              <WalkMap walkId={walk.id} heightClass="h-56" />
             </div>
             <div className="mt-4 flex items-center justify-between text-sm text-bone/80">
               <span>Photos received</span>

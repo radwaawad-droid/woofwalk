@@ -395,6 +395,102 @@ export async function cancelWalk(walkId: string) {
   await updateWalk(walkId, { status: "cancelled" });
 }
 
+// ---------------- Walk GPS locations ----------------
+
+export type WalkLocation = {
+  id: number;
+  walk_id: string;
+  lat: number;
+  lng: number;
+  accuracy_m: number | null;
+  recorded_at: string;
+};
+
+export async function pushLocation(input: {
+  walk_id: string;
+  lat: number;
+  lng: number;
+  accuracy_m?: number;
+}) {
+  const sb = getSupabase();
+  const { error } = await sb.from("walk_locations").insert({
+    walk_id: input.walk_id,
+    lat: input.lat,
+    lng: input.lng,
+    accuracy_m: input.accuracy_m ?? null,
+  });
+  if (error) throw error;
+}
+
+export async function getWalkLocations(walkId: string): Promise<WalkLocation[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("walk_locations")
+    .select("*")
+    .eq("walk_id", walkId)
+    .order("recorded_at", { ascending: true });
+  if (error) throw error;
+  return (data as WalkLocation[]) || [];
+}
+
+/**
+ * Subscribe to realtime inserts on walk_locations for a specific walk.
+ * Returns an unsubscribe function.
+ */
+export function subscribeToWalkLocations(
+  walkId: string,
+  onInsert: (loc: WalkLocation) => void,
+): () => void {
+  const sb = getSupabase();
+  const channel = sb
+    .channel(`walk_loc:${walkId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "walk_locations",
+        filter: `walk_id=eq.${walkId}`,
+      },
+      (payload) => {
+        onInsert(payload.new as WalkLocation);
+      },
+    )
+    .subscribe();
+  return () => {
+    sb.removeChannel(channel);
+  };
+}
+
+/**
+ * Subscribe to realtime changes on a specific walk row.
+ * Fires whenever status, photo_count etc change.
+ */
+export function subscribeToWalk(
+  walkId: string,
+  onChange: (walk: Walk) => void,
+): () => void {
+  const sb = getSupabase();
+  const channel = sb
+    .channel(`walk:${walkId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "walks",
+        filter: `id=eq.${walkId}`,
+      },
+      (payload) => {
+        onChange(payload.new as Walk);
+      },
+    )
+    .subscribe();
+  return () => {
+    sb.removeChannel(channel);
+  };
+}
+
 export async function bumpPhoto(walkId: string) {
   const sb = getSupabase();
   const { data: current, error: e1 } = await sb
