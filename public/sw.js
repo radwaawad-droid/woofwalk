@@ -21,8 +21,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "WoofWalk";
   const options = {
     body: payload.body || "",
-    icon: "/story/scene-dog.jpg",
-    badge: "/story/scene-dog.jpg",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
     tag: payload.tag || undefined,
     data: { url: payload.url || "/" },
   };

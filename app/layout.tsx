@@ -6,13 +6,23 @@ export const metadata: Metadata = {
   description:
     "Hand over the leash. Trusted dog walkers around Dubai, available when you need one.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icons/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/icons/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icons/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+    shortcut: [{ url: "/favicon.ico" }],
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#F6F1E7",
+  themeColor: "#0E1C2F",
 };
 
 export default function RootLayout({
