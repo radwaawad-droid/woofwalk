@@ -141,9 +141,20 @@ export function WalkerLiveTracker({
   if (state.kind === "denied") {
     return (
       <Banner tone="warn">
-        Location sharing is blocked. The owner won&apos;t see your position on
-        the map. In Safari: tap <strong>AA</strong> in the address bar →
-        Website Settings → Location → Allow.
+        <div className="font-medium">Location sharing is blocked.</div>
+        <p className="mt-1 text-xs opacity-80">
+          The owner won&apos;t see your position on the map. To re-enable:
+        </p>
+        <ul className="mt-1 list-disc pl-5 text-xs opacity-80">
+          <li>
+            iOS Safari: tap <strong>AA</strong> in the address bar → Website
+            Settings → Location → Allow.
+          </li>
+          <li>
+            Chrome: click the padlock icon in the address bar → Location →
+            Allow, then refresh.
+          </li>
+        </ul>
       </Banner>
     );
   }

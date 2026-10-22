@@ -26,34 +26,45 @@ export function WalkMap({
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [points, setPoints] = useState<WalkLocation[]>([]);
   const [ready, setReady] = useState(false);
-  const [missingToken, setMissingToken] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
   // Boot the map once
   useEffect(() => {
     if (!token) {
-      setMissingToken(true);
+      setMapError(
+        "NEXT_PUBLIC_MAPBOX_TOKEN is not set. Add it in Vercel → Settings → Environment Variables, then redeploy.",
+      );
+      return;
+    }
+    if (!token.startsWith("pk.")) {
+      setMapError(
+        "The Mapbox token looks wrong — it must start with 'pk.' (public token). You may have pasted a secret token.",
+      );
       return;
     }
     if (!containerRef.current || mapRef.current) return;
 
     mapboxgl.accessToken = token;
 
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: DUBAI_CENTER,
-      zoom: 11,
-      attributionControl: true,
-      cooperativeGestures: true, // Scroll-to-zoom requires Ctrl, so the page scrolls normally
-    });
-    map.on("load", () => {
-      // Trail source + line layer
-      map.addSource("trail", {
-        type: "geojson",
-        data: emptyLine(),
+    let map: mapboxgl.Map;
+    try {
+      map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: DUBAI_CENTER,
+        zoom: 11,
+        attributionControl: true,
+        cooperativeGestures: true,
       });
+    } catch (e: any) {
+      setMapError(e?.message || "Could not create the map.");
+      return;
+    }
+
+    map.on("load", () => {
+      map.addSource("trail", { type: "geojson", data: emptyLine() });
       map.addLayer({
         id: "trail-line",
         type: "line",
@@ -67,6 +78,26 @@ export function WalkMap({
       });
       setReady(true);
     });
+
+    // Surface auth / tile errors instead of leaving a blank dark box
+    map.on("error", (ev: any) => {
+      const err = ev?.error;
+      const status = err?.status || err?.statusCode;
+      const msg = err?.message || "";
+      if (status === 401 || /unauthoriz/i.test(msg) || /access token/i.test(msg)) {
+        setMapError(
+          "Mapbox refused the token (401). Likely cause: this site's URL isn't in your token's URL restrictions. Open your Mapbox account → Access tokens → your token → URL restrictions, and add the site URL (both https://woofwalk-psi.vercel.app/* and https://*.vercel.app/*).",
+        );
+      } else if (status === 403) {
+        setMapError(
+          "Mapbox returned 403. The token exists but doesn't have permission for the requested resource.",
+        );
+      } else if (msg) {
+        setMapError(`Map error: ${msg}`);
+      }
+      // Silence other low-severity error events
+    });
+
     mapRef.current = map;
 
     return () => {
@@ -149,20 +180,25 @@ export function WalkMap({
     }
   }, [points, ready, autoFit]);
 
-  if (missingToken) {
+  if (mapError) {
     return (
       <div
-        className={`flex ${heightClass} w-full items-center justify-center rounded-xl border border-paper bg-paper/50 text-sm text-stone`}
+        className={`flex ${heightClass} w-full items-center justify-center rounded-xl border border-paper bg-paper/80 px-4 text-center text-xs leading-relaxed text-midnight/80`}
       >
-        Map unavailable — missing Mapbox token.
+        <span>{mapError}</span>
       </div>
     );
   }
 
   return (
-    <div className={`relative ${heightClass} w-full overflow-hidden rounded-xl`}>
+    <div className={`relative ${heightClass} w-full overflow-hidden rounded-xl bg-paper`}>
       <div ref={containerRef} className="absolute inset-0" />
-      {points.length === 0 && ready && (
+      {!ready && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-midnight/60">
+          Loading map…
+        </div>
+      )}
+      {ready && points.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-bone/60 text-center text-sm text-midnight/70 backdrop-blur-sm">
           Waiting for the walker&apos;s first location…
         </div>
