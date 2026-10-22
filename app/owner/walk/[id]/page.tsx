@@ -17,6 +17,7 @@ import {
   WalkWithRefs,
 } from "@/lib/db";
 import { Badge, Button, Card, Header, PawIcon } from "@/components/UI";
+import { notify } from "@/lib/push";
 
 const WalkMap = dynamic(() => import("@/components/WalkMap").then((m) => m.WalkMap), {
   ssr: false,
@@ -134,6 +135,7 @@ export default function OwnerWalkDetail() {
   async function doCancel() {
     if (!walk) return;
     await cancelWalk(walk.id);
+    notify({ walk_id: walk.id, kind: "walk_cancelled" });
     router.replace("/owner");
   }
 

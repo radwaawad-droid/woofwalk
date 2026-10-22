@@ -13,6 +13,7 @@ import {
   WalkWithRefs,
 } from "@/lib/db";
 import { Badge, Button, Card, Empty, Header, PawIcon, Wordmark } from "@/components/UI";
+import { PushBootstrap } from "@/components/PushBootstrap";
 
 function statusTone(s: WalkWithRefs["status"]) {
   if (s === "pending") return "warn" as const;
@@ -132,6 +133,7 @@ export default function OwnerHome() {
       </section>
 
       <section className="space-y-4 px-5 py-6">
+        <PushBootstrap />
         {active && (
           <Link href={`/owner/walk/${active.id}`}>
             <Card tone="dark">

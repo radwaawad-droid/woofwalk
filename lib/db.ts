@@ -652,6 +652,33 @@ export async function uploadWalkerPhoto(file: File): Promise<string> {
   return data.publicUrl;
 }
 
+// ---------------- Push notification subscriptions ----------------
+
+/**
+ * Save or update the current user's push subscription. We key by endpoint
+ * because browsers can issue a different subscription per device.
+ */
+export async function savePushSubscription(sub: PushSubscriptionJSON) {
+  const uid = await currentUserId();
+  if (!uid || !sub.endpoint) return;
+  const sb = getSupabase();
+  await sb.from("push_subscriptions").upsert(
+    {
+      user_id: uid,
+      endpoint: sub.endpoint,
+      p256dh: sub.keys?.p256dh ?? "",
+      auth: sub.keys?.auth ?? "",
+    },
+    { onConflict: "endpoint" },
+  );
+}
+
+/** Remove a push subscription — call this when the user denies permission or signs out. */
+export async function removePushSubscription(endpoint: string) {
+  const sb = getSupabase();
+  await sb.from("push_subscriptions").delete().eq("endpoint", endpoint);
+}
+
 // ---------------- Chat messages (per walk) ----------------
 
 export type Message = {

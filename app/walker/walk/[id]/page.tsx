@@ -18,6 +18,7 @@ import {
 } from "@/lib/db";
 import { Button, CameraIcon, Card, Header, PawIcon } from "@/components/UI";
 import { WalkerLiveTracker } from "@/components/WalkerLiveTracker";
+import { notify } from "@/lib/push";
 
 // Mapbox GL uses window at import, so load it only in the browser.
 const WalkMap = dynamic(() => import("@/components/WalkMap").then((m) => m.WalkMap), {
@@ -118,6 +119,7 @@ export default function WalkerWalkDetail() {
     setBusy(true);
     try {
       await acceptWalk(walk.id);
+      notify({ walk_id: walk.id, kind: "walk_accepted" });
       const w = await getWalk(walk.id);
       setWalk(w);
     } finally {
@@ -129,6 +131,7 @@ export default function WalkerWalkDetail() {
     setBusy(true);
     try {
       await startWalk(walk.id);
+      notify({ walk_id: walk.id, kind: "walk_started" });
       const w = await getWalk(walk.id);
       setWalk(w);
     } finally {
@@ -151,6 +154,7 @@ export default function WalkerWalkDetail() {
       ]);
       if (w) setWalk(w);
       setPhotos(p);
+      notify({ walk_id: walk.id, kind: "walk_photo" });
     } catch (err: any) {
       setPhotoErr(err?.message || "Could not send the photo. Try again.");
     } finally {
@@ -165,6 +169,7 @@ export default function WalkerWalkDetail() {
     setBusy(true);
     try {
       await endWalk(walk.id);
+      notify({ walk_id: walk.id, kind: "walk_ended" });
       setTimeout(() => router.replace("/walker"), 400);
     } finally {
       setBusy(false);

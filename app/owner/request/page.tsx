@@ -19,6 +19,7 @@ import {
   inputCls,
   PawIcon,
 } from "@/components/UI";
+import { notify } from "@/lib/push";
 
 const DURATIONS = [15, 30, 45, 60];
 
@@ -119,6 +120,8 @@ export default function RequestWalk() {
         price_aed: Math.round(price),
         scheduled_for: scheduledIso,
       });
+      // Fan out to walkers in the area — fire and forget
+      notify({ walk_id: walk.id, kind: "new_request" });
       router.replace(`/owner/walk/${walk.id}`);
     } catch (e: any) {
       setErr(e?.message || "Could not create walk.");

@@ -13,6 +13,7 @@ import {
   WalkWithRefs,
 } from "@/lib/db";
 import { Header } from "@/components/UI";
+import { notify } from "@/lib/push";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -82,6 +83,7 @@ export default function ChatPage() {
       );
       setDraft("");
       inputRef.current?.focus();
+      notify({ walk_id: walk.id, kind: "new_message", excerpt: text });
     } finally {
       setSending(false);
     }

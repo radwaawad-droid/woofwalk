@@ -15,6 +15,7 @@ import {
   WalkWithRefs,
 } from "@/lib/db";
 import { Badge, Card, Empty, Header, PawIcon, Wordmark } from "@/components/UI";
+import { PushBootstrap } from "@/components/PushBootstrap";
 
 function timeAgo(ts: string) {
   const mins = Math.max(1, Math.floor((Date.now() - new Date(ts).getTime()) / 60000));
@@ -137,6 +138,7 @@ export default function WalkerHome() {
       </section>
 
       <section className="space-y-4 px-5 py-6">
+        <PushBootstrap />
         {!profileComplete && (
           <Link href="/walker/profile/edit">
             <Card tone="warn">
