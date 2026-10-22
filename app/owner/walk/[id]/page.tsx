@@ -193,9 +193,12 @@ export default function OwnerWalkDetail() {
 
         {/* Walker card — shows up as soon as there is one */}
         {walk.walker_id && (
-          <Link href={`/walker-profile/${walk.walker_id}`}>
-            <Card>
-              <div className="flex items-center gap-4">
+          <Card>
+            <div className="flex items-center gap-4">
+              <Link
+                href={`/walker-profile/${walk.walker_id}`}
+                className="flex flex-1 items-center gap-4"
+              >
                 {walkerProfile?.photo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -221,10 +224,15 @@ export default function OwnerWalkDetail() {
                     )}
                   </div>
                 </div>
-                <div className="text-stone text-sm">View</div>
-              </div>
-            </Card>
-          </Link>
+              </Link>
+              <Link
+                href={`/walk/${walk.id}/chat`}
+                className="shrink-0 rounded-full border border-midnight px-3 py-1.5 text-xs font-medium text-midnight transition hover:bg-midnight hover:text-bone"
+              >
+                Message
+              </Link>
+            </div>
+          </Card>
         )}
 
         {/* In-progress strip — live indicator + map + photos */}

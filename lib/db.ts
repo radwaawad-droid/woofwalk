@@ -652,6 +652,69 @@ export async function uploadWalkerPhoto(file: File): Promise<string> {
   return data.publicUrl;
 }
 
+// ---------------- Chat messages (per walk) ----------------
+
+export type Message = {
+  id: number;
+  walk_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+};
+
+export async function getMessages(walkId: string): Promise<Message[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("messages")
+    .select("*")
+    .eq("walk_id", walkId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data as Message[]) || [];
+}
+
+export async function sendMessage(
+  walkId: string,
+  body: string,
+): Promise<Message> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Not signed in");
+  const trimmed = body.trim();
+  if (!trimmed) throw new Error("Empty message");
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("messages")
+    .insert({ walk_id: walkId, sender_id: uid, body: trimmed })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as Message;
+}
+
+/** Realtime subscription for inserts into messages for a specific walk. */
+export function subscribeToMessages(
+  walkId: string,
+  onInsert: (m: Message) => void,
+): () => void {
+  const sb = getSupabase();
+  const channel = sb
+    .channel(`msg:${walkId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `walk_id=eq.${walkId}`,
+      },
+      (payload) => onInsert(payload.new as Message),
+    )
+    .subscribe();
+  return () => {
+    sb.removeChannel(channel);
+  };
+}
+
 // ---------------- Reviews ----------------
 
 export type Review = {

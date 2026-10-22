@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -219,6 +220,14 @@ export default function WalkerWalkDetail() {
                 {walk.dog_breed || "Mixed"} · owner {walk.owner_name}
               </div>
             </div>
+            {isMine && walk.status !== "completed" && walk.status !== "cancelled" && (
+              <Link
+                href={`/walk/${walk.id}/chat`}
+                className="shrink-0 rounded-full border border-midnight px-3 py-1.5 text-xs font-medium text-midnight transition hover:bg-midnight hover:text-bone"
+              >
+                Message
+              </Link>
+            )}
           </div>
         </Card>
 
