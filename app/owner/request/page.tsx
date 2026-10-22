@@ -30,6 +30,10 @@ export default function RequestWalk() {
   const [area, setArea] = useState<string>(DUBAI_AREAS[0]);
   const [address, setAddress] = useState<string>("");
   const [duration, setDuration] = useState<number>(30);
+  // Price is editable by the owner. Defaults to the suggested price for the
+  // chosen duration, and keeps tracking it until the owner edits it manually.
+  const [price, setPrice] = useState<number>(priceFor(30));
+  const [priceTouched, setPriceTouched] = useState<boolean>(false);
 
   const [showAddDog, setShowAddDog] = useState(false);
   const [newDog, setNewDog] = useState<{
@@ -57,6 +61,11 @@ export default function RequestWalk() {
     })();
   }, [router]);
 
+  // Keep the suggested price in sync with duration until the owner edits it
+  useEffect(() => {
+    if (!priceTouched) setPrice(priceFor(duration));
+  }, [duration, priceTouched]);
+
   async function onAddDog() {
     if (!newDog.name.trim()) return;
     const d = await addDog({
@@ -75,6 +84,10 @@ export default function RequestWalk() {
     e.preventDefault();
     setErr(null);
     if (!dogId || !address.trim()) return;
+    if (!Number.isFinite(price) || price < 30) {
+      setErr("Set a price of at least AED 30.");
+      return;
+    }
     setSubmitting(true);
     try {
       const walk = await createWalk({
@@ -82,7 +95,7 @@ export default function RequestWalk() {
         area,
         address: address.trim(),
         duration_min: duration,
-        price_aed: priceFor(duration),
+        price_aed: Math.round(price),
       });
       router.replace(`/owner/walk/${walk.id}`);
     } catch (e: any) {
@@ -100,7 +113,7 @@ export default function RequestWalk() {
     );
   }
 
-  const price = priceFor(duration);
+  const suggested = priceFor(duration);
 
   return (
     <main className="min-h-screen pb-28">
@@ -272,21 +285,62 @@ export default function RequestWalk() {
           </div>
         </section>
 
-        {/* Price summary */}
+        {/* Price — you set it, walkers accept it */}
         <section className="rounded-2xl bg-midnight p-5 text-bone">
-          <div className="flex items-end justify-between">
-            <div>
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex-1">
               <div className="text-xs uppercase tracking-wider text-lime">
-                Total
+                Your offer
               </div>
-              <div className="mt-1 font-serif text-3xl tracking-tightest">
-                AED {price}
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="font-serif text-xl text-bone/60">AED</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={30}
+                  max={999}
+                  step={5}
+                  value={price}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setPrice(Number.isFinite(v) ? v : 0);
+                    setPriceTouched(true);
+                  }}
+                  onFocus={(e) => e.currentTarget.select()}
+                  aria-label="Price in AED"
+                  className="w-24 bg-transparent border-0 border-b border-bone/30 pb-0.5 font-serif text-4xl tracking-tightest text-bone outline-none focus:border-lime [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
               </div>
+              <div className="mt-2 flex items-center gap-2 text-xs text-bone/60">
+                <span>Typical: AED {suggested}</span>
+                {priceTouched && price !== suggested && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPrice(suggested);
+                      setPriceTouched(false);
+                    }}
+                    className="rounded-full border border-bone/30 px-2 py-0.5 text-[10px] text-bone/80 hover:bg-bone/10"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              {priceTouched && price < suggested * 0.75 && price >= 30 && (
+                <div className="mt-2 text-[11px] text-amber-200">
+                  Low offers may wait longer for a walker to accept.
+                </div>
+              )}
+              {priceTouched && price > suggested * 1.5 && (
+                <div className="mt-2 text-[11px] text-lime">
+                  Nice bump — walkers will likely accept quickly.
+                </div>
+              )}
             </div>
-            <div className="text-right text-xs text-bone/70">
-              Paid on completion
+            <div className="shrink-0 text-right text-xs text-bone/60">
+              Paid on
               <br />
-              Demo mode · no real charge
+              completion
             </div>
           </div>
         </section>
