@@ -68,10 +68,12 @@ export async function POST(req: Request) {
   // to the counterparty on the walk — not to arbitrary users.
   // (For stricter auth, call the API with the Supabase session JWT.)
 
-  // Load the walk — need owner_id, walker_id, dog name, area
+  // Load the walk — enough columns to build a rich notification
   const walkQuery = await admin
     .from("walks")
-    .select("id, owner_id, walker_id, area, dog_id")
+    .select(
+      "id, owner_id, walker_id, area, community, dog_id, duration_min, price_aed, scheduled_for",
+    )
     .eq("id", body.walk_id)
     .maybeSingle();
   if (walkQuery.error || !walkQuery.data) {
@@ -85,7 +87,11 @@ export async function POST(req: Request) {
     owner_id: string;
     walker_id: string | null;
     area: string;
+    community: string | null;
     dog_id: string;
+    duration_min: number;
+    price_aed: number;
+    scheduled_for: string | null;
   };
 
   // If we have a caller, ensure they're part of this walk
@@ -194,14 +200,59 @@ export async function POST(req: Request) {
           tag: `walk-${walkRow.id}-photo`,
           url,
         };
-      case "new_request":
+      case "new_request": {
+        const when = walkRow.scheduled_for
+          ? fmtDubai(walkRow.scheduled_for)
+          : "now";
+        const loc = walkRow.community
+          ? `${walkRow.area}, ${walkRow.community}`
+          : walkRow.area;
         return {
-          title: "New walk request",
-          body: `A walk is available in ${walkRow.area}.`,
+          title: `Walk request · AED ${walkRow.price_aed} · ${when}`,
+          body: `${dogName} · ${loc} · ${walkRow.duration_min} min. Tap to accept.`,
           tag: `req-${walkRow.id}`,
           url: walkUrlWalker,
         };
+      }
     }
+  }
+
+  /**
+   * Format an ISO timestamp as a short, friendly schedule in Dubai time:
+   * "today 10:00", "tomorrow 08:30", "Mon 09:00". Server runs in UTC;
+   * we convert to Asia/Dubai for display.
+   */
+  function fmtDubai(iso: string): string {
+    const d = new Date(iso);
+    const t = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Dubai",
+      hour12: false,
+    }).format(d);
+    const sameDay = (a: Date, b: Date) =>
+      new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: "Asia/Dubai",
+      }).format(a) ===
+      new Intl.DateTimeFormat("en-CA", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: "Asia/Dubai",
+      }).format(b);
+    const now = new Date();
+    if (sameDay(d, now)) return `today ${t}`;
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    if (sameDay(d, tomorrow)) return `tomorrow ${t}`;
+    const day = new Intl.DateTimeFormat("en-GB", {
+      weekday: "short",
+      timeZone: "Asia/Dubai",
+    }).format(d);
+    return `${day} ${t}`;
   }
 
   // Fetch all push subscriptions for recipients
