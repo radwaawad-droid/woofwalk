@@ -102,15 +102,30 @@ export async function POST(req: Request) {
     );
   }
 
-  // Resolve recipients. For 'new_request' we fan out to walkers in the same area.
+  // Resolve recipients. For 'new_request' we fan out to walkers in the
+  // area — either their primary area (profiles.area) or anywhere listed
+  // in their areas_served (walker_profiles.areas_served).
   let recipientIds: string[] = [];
   if (body.kind === "new_request") {
-    const { data: walkers } = await admin
-      .from("profiles")
-      .select("id")
-      .eq("role", "walker")
-      .eq("area", walkRow.area);
-    recipientIds = (walkers || []).map((w: any) => w.id);
+    const [primaryRes, servedRes] = await Promise.all([
+      admin
+        .from("profiles")
+        .select("id")
+        .eq("role", "walker")
+        .eq("area", walkRow.area),
+      admin
+        .from("walker_profiles")
+        .select("id")
+        .contains("areas_served", [walkRow.area]),
+    ]);
+    const ids = new Set<string>();
+    (primaryRes.data || []).forEach((r: any) => ids.add(r.id));
+    (servedRes.data || []).forEach((r: any) => ids.add(r.id));
+    recipientIds = Array.from(ids);
+    // Never notify the owner themselves even if they're also set up as a walker
+    if (walkRow.owner_id) {
+      recipientIds = recipientIds.filter((id) => id !== walkRow.owner_id);
+    }
   } else {
     // Default: notify the counterparty (owner → walker, walker → owner).
     // If no caller is known, we send to BOTH parties (except null walker).
