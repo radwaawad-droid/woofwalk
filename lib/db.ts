@@ -82,6 +82,11 @@ export type WalkerProfile = {
   rating_count: number;
   // Age calculated from this; stored instead of raw age so it doesn't go stale
   date_of_birth: string | null;
+  // Stripe Connect Express onboarding state
+  stripe_account_id: string | null;
+  stripe_charges_enabled: boolean;
+  stripe_payouts_enabled: boolean;
+  stripe_details_submitted: boolean;
   updated_at: string;
 };
 

@@ -116,9 +116,30 @@ export async function POST(req: Request) {
     );
   }
 
-  const { totalFils, feeAed } = platformFeeFromPrice(walkRow.price_aed);
+  const { totalFils, feeFils, feeAed } = platformFeeFromPrice(walkRow.price_aed);
 
-  // Off-session PaymentIntent, confirmed immediately with the saved card
+  // Check if the walker has a Stripe Connect account ready to receive the split
+  let connectedAccountId: string | null = null;
+  if (walkRow.walker_id) {
+    const { data: wp } = await admin
+      .from("walker_profiles")
+      .select("stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled")
+      .eq("id", walkRow.walker_id)
+      .maybeSingle();
+    if (
+      wp?.stripe_account_id &&
+      wp.stripe_charges_enabled &&
+      wp.stripe_payouts_enabled
+    ) {
+      connectedAccountId = wp.stripe_account_id;
+    }
+  }
+
+  // Off-session PaymentIntent, confirmed immediately with the saved card.
+  // If the walker is onboarded with Connect, split at capture: platform
+  // keeps the fee, walker's share goes to their connected account balance
+  // (and from there, out to their bank on Stripe's payout schedule).
+  // Otherwise, platform collects everything; walker is paid manually later.
   let intent;
   try {
     intent = await stripe.paymentIntents.create({
@@ -134,7 +155,14 @@ export async function POST(req: Request) {
         owner_id: walkRow.owner_id,
         walker_id: walkRow.walker_id || "",
         platform_fee_aed: String(feeAed),
+        payout_route: connectedAccountId ? "connect" : "manual",
       },
+      ...(connectedAccountId
+        ? {
+            application_fee_amount: feeFils,
+            transfer_data: { destination: connectedAccountId },
+          }
+        : {}),
     });
   } catch (e: any) {
     // Save a note of the failure for the UI to show

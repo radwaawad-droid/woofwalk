@@ -14,6 +14,7 @@ import {
   upsertMyWalkerProfile,
   WalkerProfile,
 } from "@/lib/db";
+import { getSupabase } from "@/lib/supabase";
 import { Button, Field, Header, inputCls, PawIcon } from "@/components/UI";
 
 export default function WalkerProfileEdit() {
@@ -31,6 +32,13 @@ export default function WalkerProfileEdit() {
   const [areas, setAreas] = useState<string[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [dob, setDob] = useState<string>("");
+  const [payoutsState, setPayoutsState] = useState<{
+    connected: boolean;
+    details_submitted: boolean;
+    charges_enabled: boolean;
+    payouts_enabled: boolean;
+  } | null>(null);
+  const [payoutsBusy, setPayoutsBusy] = useState(false);
 
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,6 +76,61 @@ export default function WalkerProfileEdit() {
   function toggle<T>(arr: T[], v: T): T[] {
     return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
   }
+
+  async function refreshPayoutsState() {
+    try {
+      const sb = getSupabase();
+      const { data } = await sb.auth.getSession();
+      const token = data.session?.access_token;
+      const res = await fetch("/api/stripe/connect-status", {
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      });
+      const text = await res.text();
+      if (!text) return;
+      const json = JSON.parse(text);
+      if (json.ok && json.state) setPayoutsState(json.state);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function startStripeOnboarding() {
+    setErr(null);
+    setPayoutsBusy(true);
+    try {
+      const sb = getSupabase();
+      const { data } = await sb.auth.getSession();
+      const token = data.session?.access_token;
+      const res = await fetch("/api/stripe/connect-onboard", {
+        method: "POST",
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      });
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : null;
+      if (!json?.ok) {
+        setErr(json?.reason || `Server error (${res.status}).`);
+        return;
+      }
+      // Redirect to Stripe's hosted onboarding
+      window.location.href = json.url;
+    } catch (e: any) {
+      setErr(e?.message || "Could not start payouts setup.");
+    } finally {
+      setPayoutsBusy(false);
+    }
+  }
+
+  // Pull payout state on mount; refresh after Stripe returns here
+  useEffect(() => {
+    refreshPayoutsState();
+    if (
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("onboarding")
+    ) {
+      // Give Stripe a beat, then re-fetch
+      setTimeout(refreshPayoutsState, 1500);
+    }
+  }, []);
 
   async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -294,6 +357,82 @@ export default function WalkerProfileEdit() {
               onToggle={(a) => setAreas(toggle(areas, a))}
             />
           </div>
+        </section>
+
+        {/* Payouts — Stripe Connect Express */}
+        <section className="space-y-4 border-t border-paper pt-6">
+          <SectionLabel>Payouts</SectionLabel>
+
+          {!payoutsState ? (
+            <p className="text-sm text-stone">Loading payout status…</p>
+          ) : payoutsState.payouts_enabled && payoutsState.charges_enabled ? (
+            <div className="rounded-2xl border border-emerald2/30 bg-paper/40 p-4">
+              <div className="font-medium text-emerald2">
+                ✓ Payouts active
+              </div>
+              <p className="mt-1 text-sm text-midnight/80">
+                Your earnings are paid out to your bank on Stripe&apos;s
+                schedule (daily by default). Nothing more to do here.
+              </p>
+              <button
+                type="button"
+                onClick={startStripeOnboarding}
+                disabled={payoutsBusy}
+                className="mt-3 text-xs text-stone underline underline-offset-2 hover:text-midnight"
+              >
+                Update bank or ID details
+              </button>
+            </div>
+          ) : payoutsState.connected && payoutsState.details_submitted ? (
+            <div className="rounded-2xl border border-amber2/30 bg-paper/40 p-4">
+              <div className="font-medium text-amber2">
+                Verification pending
+              </div>
+              <p className="mt-1 text-sm text-midnight/80">
+                Stripe is reviewing your details. This usually takes a day;
+                we&apos;ll turn on payouts automatically when they approve.
+              </p>
+              <button
+                type="button"
+                onClick={refreshPayoutsState}
+                className="mt-3 text-xs text-midnight underline underline-offset-2"
+              >
+                Refresh status
+              </button>
+            </div>
+          ) : payoutsState.connected ? (
+            <div className="rounded-2xl border border-amber2/40 bg-paper/40 p-4">
+              <div className="font-medium">Finish payout setup</div>
+              <p className="mt-1 text-sm text-midnight/80">
+                You started onboarding but didn&apos;t finish. Continue to
+                add your Emirates ID and bank account.
+              </p>
+              <button
+                type="button"
+                onClick={startStripeOnboarding}
+                disabled={payoutsBusy}
+                className="mt-3 rounded-full bg-midnight px-4 py-2 text-sm font-medium text-bone disabled:opacity-50"
+              >
+                {payoutsBusy ? "Opening…" : "Continue setup"}
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-paper bg-paper/40 p-4">
+              <div className="font-medium">Set up payouts</div>
+              <p className="mt-1 text-sm text-midnight/80">
+                Add your Emirates ID and bank account via Stripe so we can
+                pay you automatically after every walk.
+              </p>
+              <button
+                type="button"
+                onClick={startStripeOnboarding}
+                disabled={payoutsBusy}
+                className="mt-3 rounded-full bg-midnight px-4 py-2 text-sm font-medium text-bone disabled:opacity-50"
+              >
+                {payoutsBusy ? "Opening…" : "Set up payouts"}
+              </button>
+            </div>
+          )}
         </section>
 
         {err && (
