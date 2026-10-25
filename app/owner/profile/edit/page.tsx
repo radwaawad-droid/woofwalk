@@ -16,6 +16,7 @@ export default function OwnerProfileEdit() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [area, setArea] = useState<string>(DUBAI_AREAS[0]);
+  const [community, setCommunity] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -31,6 +32,7 @@ export default function OwnerProfileEdit() {
       setName(p.name);
       setPhone(p.phone || "");
       if (p.area) setArea(p.area);
+      setCommunity(p.community || "");
     })();
   }, [router]);
 
@@ -48,6 +50,7 @@ export default function OwnerProfileEdit() {
         name: name.trim(),
         phone: phone.trim() || null,
         area,
+        community: community.trim() || null,
       });
       setMsg("Saved.");
       setTimeout(() => router.replace("/owner"), 500);
@@ -111,6 +114,18 @@ export default function OwnerProfileEdit() {
               </option>
             ))}
           </select>
+        </Field>
+
+        <Field
+          label="Community"
+          hint="Sub-community or tower, e.g. Saheel 4, Palmera 2, District 10, Marina Pinnacle Tower"
+        >
+          <input
+            className={inputCls}
+            value={community}
+            onChange={(e) => setCommunity(e.target.value)}
+            placeholder="e.g. Saheel 4"
+          />
         </Field>
 
         {err && (

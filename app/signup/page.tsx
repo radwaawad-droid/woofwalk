@@ -83,6 +83,7 @@ function SignupForm({ role }: { role: Role }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("+971 ");
   const [area, setArea] = useState(DUBAI_AREAS[0]);
+  const [community, setCommunity] = useState("");
 
   const [dogName, setDogName] = useState("");
   const [breed, setBreed] = useState("");
@@ -148,6 +149,7 @@ function SignupForm({ role }: { role: Role }) {
         name: name.trim(),
         phone: phone.trim(),
         area,
+        community: community.trim() || null,
       });
 
       if (role === "owner" && dogName.trim()) {
@@ -247,6 +249,18 @@ function SignupForm({ role }: { role: Role }) {
               </option>
             ))}
           </select>
+        </Field>
+
+        <Field
+          label="Community"
+          hint="Sub-community or tower, e.g. Saheel 4, Palmera 2, Marina Pinnacle Tower"
+        >
+          <input
+            className={inputCls}
+            value={community}
+            onChange={(e) => setCommunity(e.target.value)}
+            placeholder="e.g. Saheel 4"
+          />
         </Field>
 
         {role === "owner" && (

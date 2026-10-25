@@ -10,6 +10,8 @@ export type Profile = {
   name: string;
   phone: string | null;
   area: string | null;
+  // Sub-community within the area, e.g. "Saheel 4", "Palmera 2", "District 10"
+  community: string | null;
   created_at: string;
 };
 
@@ -37,6 +39,8 @@ export type Walk = {
   dog_id: string;
   walker_id: string | null;
   area: string;
+  // Sub-community within the area, e.g. "Saheel 4", "Palmera 2"
+  community: string | null;
   address: string;
   duration_min: number;
   price_aed: number;
@@ -189,6 +193,7 @@ export async function createProfile(input: {
   name: string;
   phone?: string | null;
   area?: string | null;
+  community?: string | null;
 }): Promise<Profile> {
   const sb = getSupabase();
   const { data, error } = await sb
@@ -199,6 +204,7 @@ export async function createProfile(input: {
       name: input.name,
       phone: input.phone ?? null,
       area: input.area ?? null,
+      community: input.community ?? null,
     })
     .select()
     .single();
@@ -412,6 +418,7 @@ export async function getWalk(id: string): Promise<WalkWithRefs | null> {
 export async function createWalk(input: {
   dog_id: string;
   area: string;
+  community?: string | null;
   address: string;
   duration_min: number;
   price_aed: number;
@@ -426,6 +433,7 @@ export async function createWalk(input: {
       owner_id: id,
       dog_id: input.dog_id,
       area: input.area,
+      community: input.community ?? null,
       address: input.address,
       duration_min: input.duration_min,
       price_aed: input.price_aed,

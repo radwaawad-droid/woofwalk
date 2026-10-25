@@ -203,7 +203,10 @@ export default function WalkerWalkDetail() {
 
       {/* Headline */}
       <section className="px-5 pt-2">
-        <p className="text-sm text-stone">{walk.area}</p>
+        <p className="text-sm text-stone">
+          {walk.area}
+          {walk.community && ` · ${walk.community}`}
+        </p>
         <h1 className="mt-1 font-serif text-3xl leading-tight tracking-tightest">
           {headline}
         </h1>

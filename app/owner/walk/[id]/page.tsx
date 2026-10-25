@@ -371,6 +371,7 @@ export default function OwnerWalkDetail() {
           <dl className="divide-y divide-paper rounded-2xl border border-paper">
             <Row label="Dog" value={`${walk.dog_name}${walk.dog_breed ? ` · ${walk.dog_breed}` : ""}`} />
             <Row label="Area" value={walk.area} />
+            {walk.community && <Row label="Community" value={walk.community} />}
             <Row label="Duration" value={`${walk.duration_min} min`} />
             <Row label="Price" value={`AED ${walk.price_aed}`} />
             <Row label="Address" value={walk.address} multiline />

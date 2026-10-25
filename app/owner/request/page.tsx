@@ -29,6 +29,7 @@ export default function RequestWalk() {
   const [dogs, setDogs] = useState<Dog[]>([]);
   const [dogId, setDogId] = useState<string>("");
   const [area, setArea] = useState<string>(DUBAI_AREAS[0]);
+  const [community, setCommunity] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [duration, setDuration] = useState<number>(30);
   // Price is editable by the owner. Defaults to the suggested price for the
@@ -66,6 +67,7 @@ export default function RequestWalk() {
       if (ds[0]) setDogId(ds[0].id);
       else setShowAddDog(true);
       if (p.area) setArea(p.area);
+      if (p.community) setCommunity(p.community);
     })();
   }, [router]);
 
@@ -115,6 +117,7 @@ export default function RequestWalk() {
       const walk = await createWalk({
         dog_id: dogId,
         area,
+        community: community.trim() || null,
         address: address.trim(),
         duration_min: duration,
         price_aed: Math.round(price),
@@ -283,6 +286,19 @@ export default function RequestWalk() {
               </option>
             ))}
           </select>
+        </section>
+
+        {/* Community */}
+        <section>
+          <SectionLabel hint="Saheel 4, Palmera 2, Marina Pinnacle…">
+            Community
+          </SectionLabel>
+          <input
+            className={inputCls}
+            value={community}
+            onChange={(e) => setCommunity(e.target.value)}
+            placeholder="e.g. Saheel 4"
+          />
         </section>
 
         {/* Address */}

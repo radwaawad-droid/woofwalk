@@ -248,7 +248,8 @@ export default function WalkerHome() {
                         </span>
                       </div>
                       <div className="mt-0.5 text-xs text-stone">
-                        {w.area} · {w.duration_min} min
+                        {w.area}
+                        {w.community && ` · ${w.community}`} · {w.duration_min} min
                       </div>
                       <div className="mt-1 text-xs text-stone/80">
                         {isScheduled
