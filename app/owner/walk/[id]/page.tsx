@@ -227,12 +227,14 @@ export default function OwnerWalkDetail() {
                   </div>
                 </div>
               </Link>
-              <Link
-                href={`/walk/${walk.id}/chat`}
-                className="shrink-0 rounded-full border border-midnight px-3 py-1.5 text-xs font-medium text-midnight transition hover:bg-midnight hover:text-bone"
-              >
-                Message
-              </Link>
+              {walk.status !== "completed" && walk.status !== "cancelled" && (
+                <Link
+                  href={`/walk/${walk.id}/chat`}
+                  className="shrink-0 rounded-full border border-midnight px-3 py-1.5 text-xs font-medium text-midnight transition hover:bg-midnight hover:text-bone"
+                >
+                  Message
+                </Link>
+              )}
             </div>
           </Card>
         )}
