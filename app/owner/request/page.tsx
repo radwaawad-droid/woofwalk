@@ -123,8 +123,10 @@ export default function RequestWalk() {
         price_aed: Math.round(price),
         scheduled_for: scheduledIso,
       });
-      // Fan out to walkers in the area — fire and forget
-      notify({ walk_id: walk.id, kind: "new_request" });
+      // Fan out to walkers in the area. Await it (not fire-and-forget) so
+      // the fetch isn't cancelled by the immediate router.replace below —
+      // keepalive=true isn't reliable on iOS Safari during navigation.
+      await notify({ walk_id: walk.id, kind: "new_request" });
       router.replace(`/owner/walk/${walk.id}`);
     } catch (e: any) {
       setErr(e?.message || "Could not create walk.");
