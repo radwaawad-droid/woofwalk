@@ -14,6 +14,7 @@ type Body = { walk_id: string };
  * really is completed and payment hasn't already been collected.
  */
 export async function POST(req: Request) {
+  try {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceKey) {
@@ -170,4 +171,11 @@ export async function POST(req: Request) {
     payment_intent_id: intent.id,
     status: intent.status,
   });
+  } catch (e: any) {
+    console.error("charge-walk error:", e);
+    return NextResponse.json(
+      { ok: false, reason: e?.message || "Unexpected server error." },
+      { status: 500 },
+    );
+  }
 }

@@ -53,6 +53,16 @@ export default function PaymentPage() {
   const [err, setErr] = useState<string | null>(null);
   const [configured, setConfigured] = useState(true);
 
+  async function safeJson(res: Response) {
+    const text = await res.text();
+    if (!text) return { ok: false, reason: `Server returned ${res.status} with no body.` };
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, reason: `Non-JSON ${res.status}: ${text.slice(0, 160)}` };
+    }
+  }
+
   async function fetchExisting() {
     try {
       const sb = getSupabase();
@@ -61,7 +71,7 @@ export default function PaymentPage() {
       const res = await fetch("/api/stripe/payment-method", {
         headers: token ? { authorization: `Bearer ${token}` } : {},
       });
-      const json = await res.json();
+      const json = await safeJson(res);
       if (res.status === 503) {
         setConfigured(false);
         return;
@@ -82,10 +92,10 @@ export default function PaymentPage() {
         method: "POST",
         headers: token ? { authorization: `Bearer ${token}` } : {},
       });
-      const json = await res.json();
+      const json = await safeJson(res);
       if (!json.ok) {
         if (res.status === 503) setConfigured(false);
-        else setErr(json.reason || "Could not start card setup.");
+        setErr(json.reason || `Server error (${res.status}).`);
         return;
       }
       setClientSecret(json.client_secret);

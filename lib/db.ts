@@ -505,7 +505,16 @@ export async function chargeWalk(walkId: string): Promise<{
       },
       body: JSON.stringify({ walk_id: walkId }),
     });
-    return await res.json();
+    // Avoid Unexpected end of JSON input on empty-body error responses
+    const text = await res.text();
+    if (!text) {
+      return { ok: false, reason: `Server returned ${res.status} with no body.` };
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, reason: `Non-JSON ${res.status}: ${text.slice(0, 160)}` };
+    }
   } catch (e: any) {
     return { ok: false, reason: e?.message || "Could not reach charge API" };
   }
