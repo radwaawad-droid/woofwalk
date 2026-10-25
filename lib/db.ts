@@ -33,6 +33,8 @@ export type WalkStatus =
   | "completed"
   | "cancelled";
 
+export type PaymentStatus = "unpaid" | "paid" | "failed" | "refunded";
+
 export type Walk = {
   id: string;
   owner_id: string;
@@ -48,6 +50,10 @@ export type Walk = {
   photo_count: number;
   // null = on-demand (right now); set = scheduled for this time
   scheduled_for: string | null;
+  // Payment lifecycle, driven by the walker's end-walk flow calling Stripe
+  payment_status: PaymentStatus | null;
+  stripe_payment_intent_id: string | null;
+  platform_fee_aed: number | null;
   created_at: string;
   accepted_at: string | null;
   started_at: string | null;
@@ -473,6 +479,36 @@ export async function endWalk(walkId: string) {
     status: "completed",
     ended_at: new Date().toISOString(),
   });
+}
+
+/**
+ * Ask the server to charge the owner's saved card for a completed walk.
+ * Returns the server's response — the caller can show success / failure
+ * UI based on `ok`. Safe to call multiple times — the server short-circuits
+ * if the walk is already paid.
+ */
+export async function chargeWalk(walkId: string): Promise<{
+  ok: boolean;
+  reason?: string;
+  already?: boolean;
+  status?: string;
+}> {
+  const sb = getSupabase();
+  const { data } = await sb.auth.getSession();
+  const token = data.session?.access_token;
+  try {
+    const res = await fetch("/api/stripe/charge-walk", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ walk_id: walkId }),
+    });
+    return await res.json();
+  } catch (e: any) {
+    return { ok: false, reason: e?.message || "Could not reach charge API" };
+  }
 }
 
 export async function cancelWalk(walkId: string) {

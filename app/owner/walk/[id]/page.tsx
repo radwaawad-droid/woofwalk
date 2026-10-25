@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   cancelWalk,
+  chargeWalk,
   getMyProfile,
   getReviewForWalk,
   getWalk,
@@ -339,6 +340,14 @@ export default function OwnerWalkDetail() {
           </Card>
         )}
 
+        {/* Payment status on completed walks */}
+        {walk.status === "completed" && (
+          <PaymentStatusCard walk={walk} onRefresh={async () => {
+            const w = await getWalk(walk.id);
+            if (w) setWalk(w);
+          }} />
+        )}
+
         {walk.status === "completed" && review && (
           <Card>
             <div className="flex items-start justify-between">
@@ -420,5 +429,108 @@ function Row({
         {value}
       </dd>
     </div>
+  );
+}
+
+function PaymentStatusCard({
+  walk,
+  onRefresh,
+}: {
+  walk: WalkWithRefs;
+  onRefresh: () => Promise<void>;
+}) {
+  const [retrying, setRetrying] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const status = walk.payment_status || "unpaid";
+  if (status === "paid") {
+    return (
+      <Card>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-stone">
+              Payment
+            </div>
+            <div className="mt-1 font-serif text-lg">Paid · AED {walk.price_aed}</div>
+            <div className="mt-0.5 text-xs text-stone">
+              Charged to your card on file.
+            </div>
+          </div>
+          <div className="text-xs font-medium text-emerald2">✓ Settled</div>
+        </div>
+      </Card>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <Card tone="warn">
+        <div className="font-serif text-lg">Payment failed</div>
+        <p className="mt-1 text-sm text-midnight/80">
+          We couldn&apos;t charge your card for this walk. Add or replace your
+          card, then retry.
+        </p>
+        <div className="mt-3 flex gap-2">
+          <Link
+            href="/owner/payment"
+            className="rounded-full bg-midnight px-4 py-2 text-xs font-medium text-bone"
+          >
+            Payment settings
+          </Link>
+          <button
+            type="button"
+            disabled={retrying}
+            onClick={async () => {
+              setRetrying(true);
+              setMsg(null);
+              const r = await chargeWalk(walk.id);
+              if (r.ok) {
+                setMsg("Charged.");
+              } else {
+                setMsg(r.reason || "Still failing.");
+              }
+              await onRefresh();
+              setRetrying(false);
+            }}
+            className="rounded-full border border-midnight px-4 py-2 text-xs font-medium text-midnight hover:bg-midnight hover:text-bone"
+          >
+            {retrying ? "Retrying…" : "Retry charge"}
+          </button>
+        </div>
+        {msg && <p className="mt-2 text-xs text-stone">{msg}</p>}
+      </Card>
+    );
+  }
+  // unpaid — the walker just ended but the server-side charge is still in flight,
+  // or no card was on file to begin with
+  return (
+    <Card>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-stone">
+            Payment
+          </div>
+          <div className="mt-1 font-serif text-lg">Pending · AED {walk.price_aed}</div>
+          <div className="mt-0.5 text-xs text-stone">
+            We&apos;re settling the charge against your card on file.
+          </div>
+        </div>
+        <button
+          type="button"
+          disabled={retrying}
+          onClick={async () => {
+            setRetrying(true);
+            setMsg(null);
+            const r = await chargeWalk(walk.id);
+            if (!r.ok) setMsg(r.reason || "Charge failed.");
+            await onRefresh();
+            setRetrying(false);
+          }}
+          className="shrink-0 rounded-full border border-midnight px-3 py-1.5 text-xs font-medium text-midnight hover:bg-midnight hover:text-bone"
+        >
+          {retrying ? "…" : "Charge now"}
+        </button>
+      </div>
+      {msg && <p className="mt-2 text-xs text-stone">{msg}</p>}
+    </Card>
   );
 }

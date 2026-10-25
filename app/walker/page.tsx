@@ -107,7 +107,12 @@ export default function WalkerHome() {
     );
   }
 
-  const earnings = completed.reduce((sum, w) => sum + w.price_aed, 0);
+  // 10% platform fee, min AED 1 — matches platformFeeFromPrice() on the server
+  const grossEarnings = completed.reduce((sum, w) => sum + w.price_aed, 0);
+  const earnings = completed.reduce((sum, w) => {
+    const fee = Math.max(1, Math.round(w.price_aed * 0.1));
+    return sum + (w.price_aed - fee);
+  }, 0);
   const profileComplete = !!(walkerProfile?.photo_url && walkerProfile?.bio);
 
   return (
@@ -169,6 +174,12 @@ export default function WalkerHome() {
               </div>
               <div className="mt-1 text-sm text-bone/70">
                 {completed.length} walk{completed.length === 1 ? "" : "s"} completed
+                {grossEarnings > earnings && (
+                  <>
+                    {" "}
+                    · AED {grossEarnings - earnings} fee
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -130,12 +130,20 @@ export default function OwnerHome() {
         <h1 className="font-serif text-3xl leading-tight tracking-tightest">
           {profile.name.split(" ")[0]}.
         </h1>
-        <Link
-          href="/owner/profile/edit"
-          className="mt-1 inline-block text-xs text-stone underline underline-offset-2 hover:text-midnight"
-        >
-          Edit your profile
-        </Link>
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone">
+          <Link
+            href="/owner/profile/edit"
+            className="underline underline-offset-2 hover:text-midnight"
+          >
+            Edit your profile
+          </Link>
+          <Link
+            href="/owner/payment"
+            className="underline underline-offset-2 hover:text-midnight"
+          >
+            Payment
+          </Link>
+        </div>
       </section>
 
       <section className="space-y-4 px-5 py-6">

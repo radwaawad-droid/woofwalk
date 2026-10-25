@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   acceptWalk,
+  chargeWalk,
   endWalk,
   getMyProfile,
   getWalk,
@@ -170,6 +171,9 @@ export default function WalkerWalkDetail() {
     try {
       await endWalk(walk.id);
       notify({ walk_id: walk.id, kind: "walk_ended" });
+      // Fire the charge; non-fatal if it fails (owner's walk-detail page
+      // surfaces the result either way). Don't block navigation on it.
+      chargeWalk(walk.id).catch(() => {});
       setTimeout(() => router.replace("/walker"), 400);
     } finally {
       setBusy(false);
