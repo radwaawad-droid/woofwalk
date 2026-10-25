@@ -130,6 +130,12 @@ export default function OwnerHome() {
         <h1 className="font-serif text-3xl leading-tight tracking-tightest">
           {profile.name.split(" ")[0]}.
         </h1>
+        <Link
+          href="/owner/profile/edit"
+          className="mt-1 inline-block text-xs text-stone underline underline-offset-2 hover:text-midnight"
+        >
+          Edit your profile
+        </Link>
       </section>
 
       <section className="space-y-4 px-5 py-6">
@@ -158,10 +164,10 @@ export default function OwnerHome() {
         <div className="flex items-baseline justify-between pt-2">
           <h2 className="font-serif text-lg">Your dogs</h2>
           <Link
-            href="/owner/request"
+            href="/owner/dogs/new"
             className="text-sm font-medium text-midnight underline underline-offset-2"
           >
-            Request a walk
+            + Add a dog
           </Link>
         </div>
 
@@ -170,25 +176,39 @@ export default function OwnerHome() {
             title="No dogs yet"
             body="Add your dog to request a walk."
             action={
-              <Button as="link" href="/owner/request" full={false}>
+              <Button as="link" href="/owner/dogs/new" full={false}>
                 Add dog
               </Button>
             }
           />
         ) : (
-          <div className="divide-y divide-paper rounded-2xl border border-paper">
+          <div className="divide-y divide-paper rounded-2xl border border-paper overflow-hidden">
             {dogs.map((d) => (
-              <div key={d.id} className="flex items-center gap-4 px-4 py-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-paper text-midnight/70">
-                  <PawIcon className="h-5 w-5" />
-                </div>
+              <Link
+                key={d.id}
+                href={`/owner/dogs/${d.id}`}
+                className="flex items-center gap-4 px-4 py-3 transition hover:bg-paper/40"
+              >
+                {d.photo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={d.photo_url}
+                    alt={d.name}
+                    className="h-11 w-11 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-paper text-midnight/70">
+                    <PawIcon className="h-5 w-5" />
+                  </div>
+                )}
                 <div className="flex-1">
                   <div className="font-medium">{d.name}</div>
                   <div className="text-xs text-stone">
                     {d.breed || "Mixed"} · {d.size || "medium"}
                   </div>
                 </div>
-              </div>
+                <div className="text-xs text-stone">Edit</div>
+              </Link>
             ))}
           </div>
         )}

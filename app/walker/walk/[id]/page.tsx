@@ -217,9 +217,18 @@ export default function WalkerWalkDetail() {
         {/* Dog card — the headline subject */}
         <Card>
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-paper text-midnight/60">
-              <PawIcon className="h-6 w-6" />
-            </div>
+            {walk.dog_photo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={walk.dog_photo_url}
+                alt={dogName}
+                className="h-14 w-14 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-paper text-midnight/60">
+                <PawIcon className="h-6 w-6" />
+              </div>
+            )}
             <div className="flex-1">
               <div className="font-serif text-lg leading-tight">
                 {dogName}

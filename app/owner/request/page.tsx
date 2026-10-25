@@ -204,15 +204,26 @@ export default function RequestWalk() {
                     dogId === d.id ? "bg-paper/50" : "hover:bg-paper/30"
                   }`}
                 >
-                  <div
-                    className={`flex h-11 w-11 items-center justify-center rounded-full ${
-                      dogId === d.id
-                        ? "bg-midnight text-bone"
-                        : "bg-paper text-midnight/70"
-                    }`}
-                  >
-                    <PawIcon className="h-5 w-5" />
-                  </div>
+                  {d.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={d.photo_url}
+                      alt={d.name}
+                      className={`h-11 w-11 rounded-full object-cover ${
+                        dogId === d.id ? "ring-2 ring-midnight" : ""
+                      }`}
+                    />
+                  ) : (
+                    <div
+                      className={`flex h-11 w-11 items-center justify-center rounded-full ${
+                        dogId === d.id
+                          ? "bg-midnight text-bone"
+                          : "bg-paper text-midnight/70"
+                      }`}
+                    >
+                      <PawIcon className="h-5 w-5" />
+                    </div>
+                  )}
                   <div className="flex-1">
                     <div className="font-medium">{d.name}</div>
                     <div className="text-xs text-stone">

@@ -20,6 +20,7 @@ export type Dog = {
   breed: string | null;
   size: "small" | "medium" | "large" | null;
   notes: string | null;
+  photo_url: string | null;
   created_at: string;
 };
 
@@ -53,6 +54,7 @@ export type Walk = {
 export type WalkWithRefs = Walk & {
   dog_name?: string;
   dog_breed?: string;
+  dog_photo_url?: string | null;
   owner_name?: string;
   walker_name?: string;
 };
@@ -236,6 +238,7 @@ export async function addDog(d: {
   breed?: string;
   size?: "small" | "medium" | "large";
   notes?: string;
+  photo_url?: string | null;
 }): Promise<Dog> {
   const id = await currentUserId();
   if (!id) throw new Error("Not signed in");
@@ -248,11 +251,60 @@ export async function addDog(d: {
       breed: d.breed ?? null,
       size: d.size ?? null,
       notes: d.notes ?? null,
+      photo_url: d.photo_url ?? null,
     })
     .select()
     .single();
   if (error) throw error;
   return data as Dog;
+}
+
+export async function getDog(id: string): Promise<Dog | null> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("dogs")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Dog | null) || null;
+}
+
+export async function updateDog(
+  id: string,
+  patch: Partial<Pick<Dog, "name" | "breed" | "size" | "notes" | "photo_url">>,
+) {
+  const sb = getSupabase();
+  const { error } = await sb.from("dogs").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteDog(id: string) {
+  const sb = getSupabase();
+  const { error } = await sb.from("dogs").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/**
+ * Upload a dog photo. Reuses the walker-photos bucket (already set up with
+ * permissive upload policies) and stores at dogs/{dogId}/photo-{ts}.jpg.
+ */
+export async function uploadDogPhoto(dogId: string, file: File): Promise<string> {
+  const uid = await currentUserId();
+  if (!uid) throw new Error("Not signed in");
+  const sb = getSupabase();
+  const compressed = await compressImage(file, 1200, 0.85);
+  const path = `dogs/${dogId}/photo-${Date.now()}.jpg`;
+  const { error: upErr } = await sb.storage
+    .from("walker-photos")
+    .upload(path, compressed, {
+      upsert: true,
+      contentType: "image/jpeg",
+      cacheControl: "3600",
+    });
+  if (upErr) throw upErr;
+  const { data } = sb.storage.from("walker-photos").getPublicUrl(path);
+  return data.publicUrl;
 }
 
 // ---------------- Walks ----------------
@@ -266,13 +318,16 @@ async function enrichWalks(walks: Walk[]): Promise<WalkWithRefs[]> {
   ) as string[];
 
   const [dogsRes, profRes] = await Promise.all([
-    sb.from("dogs").select("id, name, breed").in("id", dogIds),
+    sb.from("dogs").select("id, name, breed, photo_url").in("id", dogIds),
     sb.from("profiles").select("id, name").in("id", profileIds),
   ]);
 
-  const dogMap = new Map<string, { name: string; breed: string | null }>();
+  const dogMap = new Map<
+    string,
+    { name: string; breed: string | null; photo_url: string | null }
+  >();
   (dogsRes.data || []).forEach((d: any) =>
-    dogMap.set(d.id, { name: d.name, breed: d.breed }),
+    dogMap.set(d.id, { name: d.name, breed: d.breed, photo_url: d.photo_url }),
   );
   const profMap = new Map<string, string>();
   (profRes.data || []).forEach((p: any) => profMap.set(p.id, p.name));
@@ -281,6 +336,7 @@ async function enrichWalks(walks: Walk[]): Promise<WalkWithRefs[]> {
     ...w,
     dog_name: dogMap.get(w.dog_id)?.name,
     dog_breed: dogMap.get(w.dog_id)?.breed || undefined,
+    dog_photo_url: dogMap.get(w.dog_id)?.photo_url || null,
     owner_name: profMap.get(w.owner_id),
     walker_name: w.walker_id ? profMap.get(w.walker_id) : undefined,
   }));
