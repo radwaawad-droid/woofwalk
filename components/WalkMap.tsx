@@ -44,17 +44,13 @@ export function WalkMap({
         scrollWheelZoom: false,
       });
 
-      // CARTO Positron — clean minimal black/white style, free, no API key.
-      // Retina-aware URL so sharp tiles render on iPhones & high-DPI laptops.
-      L.tileLayer(
-        "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
-        {
-          maxZoom: 20,
-          subdomains: "abcd",
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        },
-      ).addTo(map);
+      // OpenStreetMap standard tiles — free, no API key, works globally.
+      // (CARTO's cdn now requires a key; this is the reliable fallback.)
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
 
       // The polyline for the trail; empty until points arrive
       const polyline = L.polyline([], {
