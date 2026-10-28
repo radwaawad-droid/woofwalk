@@ -96,6 +96,12 @@ export type WalkerProfile = {
   approval_status: ApprovalStatus;
   approval_notes: string | null;
   approved_at: string | null;
+  // ID verification — walker uploads Emirates ID or passport; admin confirms
+  id_document_type: "emirates_id" | "passport" | null;
+  id_document_front_path: string | null;
+  id_document_back_path: string | null;
+  id_document_uploaded_at: string | null;
+  id_verified_at: string | null;
   updated_at: string;
 };
 
@@ -770,10 +776,24 @@ export async function getMyWalkerProfile(): Promise<WalkerProfile | null> {
 export async function upsertMyWalkerProfile(patch: Partial<WalkerProfile>) {
   const id = await currentUserId();
   if (!id) throw new Error("Not signed in");
+  // Strip columns only the admin (or our server routes) are allowed to set.
+  // There's a DB trigger backing this up too; this is just a friendlier error path.
+  const {
+    approval_status: _as,
+    approval_notes: _an,
+    approved_at: _at,
+    id_verified: _iv,
+    id_verified_at: _ivat,
+    stripe_account_id: _sa,
+    stripe_charges_enabled: _sce,
+    stripe_payouts_enabled: _spe,
+    stripe_details_submitted: _sds,
+    ...safePatch
+  } = patch as any;
   const sb = getSupabase();
   const { error } = await sb
     .from("walker_profiles")
-    .upsert({ id, ...patch, updated_at: new Date().toISOString() });
+    .upsert({ id, ...safePatch, updated_at: new Date().toISOString() });
   if (error) throw error;
 }
 
@@ -789,6 +809,47 @@ export async function uploadWalkerPhoto(file: File): Promise<string> {
   if (error) throw error;
   const { data } = sb.storage.from("walker-photos").getPublicUrl(path);
   return data.publicUrl;
+}
+
+/**
+ * Upload an ID document to the PRIVATE walker-ids bucket and return its
+ * storage path. The path (not a URL) is what we persist on walker_profiles —
+ * public URLs would defeat the whole point of a private bucket.
+ */
+export async function uploadWalkerIdDocument(
+  file: File,
+  side: "front" | "back",
+): Promise<string> {
+  const id = await currentUserId();
+  if (!id) throw new Error("Not signed in");
+  const sb = getSupabase();
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  // Deterministic filename per side so a re-upload overwrites the old one
+  const path = `${id}/id-${side}.${ext}`;
+  const { error } = await sb.storage
+    .from("walker-ids")
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  return path;
+}
+
+/**
+ * Short-lived signed URL for a file in a private bucket. Returns null if
+ * the path is missing or the caller isn't allowed to read it (owner or admin).
+ * `expiresInSec` keeps the link useless after it's served.
+ */
+export async function getSignedPrivateUrl(
+  bucket: "walker-ids",
+  path: string | null | undefined,
+  expiresInSec = 60,
+): Promise<string | null> {
+  if (!path) return null;
+  const sb = getSupabase();
+  const { data, error } = await sb.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresInSec);
+  if (error || !data?.signedUrl) return null;
+  return data.signedUrl;
 }
 
 // ---------------- Push notification subscriptions ----------------

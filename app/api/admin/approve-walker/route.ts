@@ -51,14 +51,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, reason: "Not authorized" }, { status: 403 });
     }
 
+    // If the walker has uploaded an ID doc, approving is also our record
+    // that an admin eyeballed it — mark it verified in the same write.
+    const { data: existing } = await admin
+      .from("walker_profiles")
+      .select("id_document_front_path, id_verified")
+      .eq("id", body.walker_id)
+      .maybeSingle();
+
+    const now = new Date().toISOString();
+    const patch: Record<string, any> = {
+      approval_status: "approved",
+      approval_notes: null,
+      approved_at: now,
+      approved_by: callerId,
+    };
+    if (existing?.id_document_front_path && !existing.id_verified) {
+      patch.id_verified = true;
+      patch.id_verified_at = now;
+      patch.id_verified_by = callerId;
+    }
+
     const { error } = await admin
       .from("walker_profiles")
-      .update({
-        approval_status: "approved",
-        approval_notes: null,
-        approved_at: new Date().toISOString(),
-        approved_by: callerId,
-      })
+      .update(patch)
       .eq("id", body.walker_id);
     if (error) {
       return NextResponse.json({ ok: false, reason: error.message }, { status: 500 });

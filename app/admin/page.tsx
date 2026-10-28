@@ -12,6 +12,7 @@ import {
   getAllWalks,
   getMyProfile,
   getPendingWalkers,
+  getSignedPrivateUrl,
   getWalkersByStatus,
   signOut,
   Profile,
@@ -425,6 +426,37 @@ function WalkerReviewCard({
     return Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
   })();
 
+  // Sign the private ID urls on mount. 5-minute TTL so an admin can zoom in
+  // without the preview going stale while they're reading.
+  const [idFront, setIdFront] = useState<string | null>(null);
+  const [idBack, setIdBack] = useState<string | null>(null);
+  const [showIdFull, setShowIdFull] = useState<"front" | "back" | null>(null);
+
+  useEffect(() => {
+    if (walker.id_document_front_path) {
+      getSignedPrivateUrl("walker-ids", walker.id_document_front_path, 300)
+        .then((u) => setIdFront(u))
+        .catch(() => {});
+    }
+    if (walker.id_document_back_path) {
+      getSignedPrivateUrl("walker-ids", walker.id_document_back_path, 300)
+        .then((u) => setIdBack(u))
+        .catch(() => {});
+    }
+  }, [walker.id_document_front_path, walker.id_document_back_path]);
+
+  const hasId = !!walker.id_document_front_path;
+
+  function handleApprove() {
+    if (!hasId) {
+      const ok = window.confirm(
+        "This walker hasn't uploaded an ID yet. Approve anyway?",
+      );
+      if (!ok) return;
+    }
+    onApprove();
+  }
+
   return (
     <Card>
       <div className="flex items-start gap-4">
@@ -491,9 +523,55 @@ function WalkerReviewCard({
             </div>
           )}
 
+          {/* ID verification */}
+          <div className="mt-4 rounded-xl border border-paper bg-paper/40 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-xs font-medium uppercase tracking-wide text-stone">
+                ID verification
+              </div>
+              {hasId ? (
+                <Badge tone={walker.id_verified_at ? "ok" : "info"}>
+                  {walker.id_document_type === "passport"
+                    ? "Passport"
+                    : "Emirates ID"}
+                  {walker.id_verified_at ? " · verified" : " · uploaded"}
+                </Badge>
+              ) : (
+                <Badge tone="warn">No ID uploaded</Badge>
+              )}
+            </div>
+
+            {hasId ? (
+              <div className="flex flex-wrap gap-2">
+                {idFront && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={idFront}
+                    alt="ID front"
+                    onClick={() => setShowIdFull("front")}
+                    className="h-24 w-36 cursor-zoom-in rounded-lg border border-chalk object-cover"
+                  />
+                )}
+                {idBack && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={idBack}
+                    alt="ID back"
+                    onClick={() => setShowIdFull("back")}
+                    className="h-24 w-36 cursor-zoom-in rounded-lg border border-chalk object-cover"
+                  />
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-stone">
+                Walker hasn't uploaded a photo of their ID yet.
+              </p>
+            )}
+          </div>
+
           <div className="mt-4 flex gap-2">
             <Button
-              onClick={onApprove}
+              onClick={handleApprove}
               disabled={busy}
               full={false}
             >
@@ -512,6 +590,21 @@ function WalkerReviewCard({
           </div>
         </div>
       </div>
+
+      {/* Full-screen ID viewer */}
+      {showIdFull && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-midnight/80 p-4"
+          onClick={() => setShowIdFull(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={(showIdFull === "front" ? idFront : idBack) || ""}
+            alt="ID full"
+            className="max-h-full max-w-full rounded-lg"
+          />
+        </div>
+      )}
     </Card>
   );
 }

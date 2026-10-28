@@ -7,9 +7,11 @@ import {
   DUBAI_AREAS,
   getMyProfile,
   getMyWalkerProfile,
+  getSignedPrivateUrl,
   LANGUAGES,
   Profile,
   updateMyProfile,
+  uploadWalkerIdDocument,
   uploadWalkerPhoto,
   upsertMyWalkerProfile,
   WalkerProfile,
@@ -46,6 +48,18 @@ export default function WalkerProfileEdit() {
   const [err, setErr] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // ----- ID verification state -----
+  const [idType, setIdType] = useState<"emirates_id" | "passport">("emirates_id");
+  const [idFrontUrl, setIdFrontUrl] = useState<string | null>(null); // signed preview URL
+  const [idBackUrl, setIdBackUrl] = useState<string | null>(null);
+  const [idFrontPath, setIdFrontPath] = useState<string | null>(null);
+  const [idBackPath, setIdBackPath] = useState<string | null>(null);
+  const [idUploadedAt, setIdUploadedAt] = useState<string | null>(null);
+  const [idVerifiedAt, setIdVerifiedAt] = useState<string | null>(null);
+  const [idUploadingSide, setIdUploadingSide] = useState<"front" | "back" | null>(null);
+  const idFrontRef = useRef<HTMLInputElement>(null);
+  const idBackRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     (async () => {
       const p = await getMyProfile();
@@ -67,11 +81,80 @@ export default function WalkerProfileEdit() {
         setAreas(wpr.areas_served || (p.area ? [p.area] : []));
         setPhotoUrl(wpr.photo_url);
         setDob(wpr.date_of_birth || "");
+        if (wpr.id_document_type) setIdType(wpr.id_document_type);
+        setIdFrontPath(wpr.id_document_front_path);
+        setIdBackPath(wpr.id_document_back_path);
+        setIdUploadedAt(wpr.id_document_uploaded_at);
+        setIdVerifiedAt(wpr.id_verified_at);
+        // Pre-fetch signed URLs so the walker can see their uploaded IDs
+        if (wpr.id_document_front_path) {
+          getSignedPrivateUrl("walker-ids", wpr.id_document_front_path, 120)
+            .then((u) => setIdFrontUrl(u))
+            .catch(() => {});
+        }
+        if (wpr.id_document_back_path) {
+          getSignedPrivateUrl("walker-ids", wpr.id_document_back_path, 120)
+            .then((u) => setIdBackUrl(u))
+            .catch(() => {});
+        }
       } else if (p.area) {
         setAreas([p.area]);
       }
     })();
   }, [router]);
+
+  async function onPickId(
+    side: "front" | "back",
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr(null);
+    setIdUploadingSide(side);
+    try {
+      const path = await uploadWalkerIdDocument(file, side);
+      const now = new Date().toISOString();
+      // Save path + type on the walker profile
+      await upsertMyWalkerProfile({
+        id_document_type: idType,
+        [side === "front" ? "id_document_front_path" : "id_document_back_path"]: path,
+        id_document_uploaded_at: now,
+      } as any);
+      const signed = await getSignedPrivateUrl("walker-ids", path, 120);
+      if (side === "front") {
+        setIdFrontPath(path);
+        setIdFrontUrl(signed);
+      } else {
+        setIdBackPath(path);
+        setIdBackUrl(signed);
+      }
+      setIdUploadedAt(now);
+      setMsg("ID uploaded. We'll review it shortly.");
+      setTimeout(() => setMsg(null), 3000);
+    } catch (e: any) {
+      setErr(e?.message || "Couldn't upload the photo. Try again?");
+    } finally {
+      setIdUploadingSide(null);
+      if (side === "front" && idFrontRef.current) idFrontRef.current.value = "";
+      if (side === "back" && idBackRef.current) idBackRef.current.value = "";
+    }
+  }
+
+  async function onIdTypeChange(next: "emirates_id" | "passport") {
+    setIdType(next);
+    // Save the type right away so later uploads are self-consistent
+    try {
+      await upsertMyWalkerProfile({ id_document_type: next } as any);
+    } catch {}
+    // Switching to Passport? Clear the back path since passports don't have one
+    if (next === "passport" && idBackPath) {
+      try {
+        await upsertMyWalkerProfile({ id_document_back_path: null } as any);
+        setIdBackPath(null);
+        setIdBackUrl(null);
+      } catch {}
+    }
+  }
 
   function toggle<T>(arr: T[], v: T): T[] {
     return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
@@ -361,6 +444,89 @@ export default function WalkerProfileEdit() {
 
         {/* Payouts — Stripe Connect Express */}
         <section className="space-y-4 border-t border-paper pt-6">
+          <SectionLabel>ID verification</SectionLabel>
+          <p className="-mt-2 text-sm text-stone">
+            Owners trust walkers who are verified. Upload a clear photo of your
+            Emirates ID or passport so we can approve your account.
+          </p>
+
+          {idVerifiedAt ? (
+            <div className="rounded-2xl border border-emerald2/30 bg-paper/40 p-4">
+              <div className="font-medium text-emerald2">✓ ID verified</div>
+              <p className="mt-1 text-sm text-midnight/80">
+                Thanks — your account is verified.
+              </p>
+            </div>
+          ) : idUploadedAt ? (
+            <div className="rounded-2xl border border-amber2/30 bg-paper/40 p-4">
+              <div className="font-medium text-amber2">Awaiting review</div>
+              <p className="mt-1 text-sm text-midnight/80">
+                We'll check your ID shortly. You'll be able to accept walks
+                once that's done.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-paper bg-paper/40 p-4 text-sm text-midnight/80">
+              Required to accept walks.
+            </div>
+          )}
+
+          <Field label="Document type">
+            <select
+              value={idType}
+              onChange={(e) =>
+                onIdTypeChange(e.target.value as "emirates_id" | "passport")
+              }
+              className={inputCls}
+            >
+              <option value="emirates_id">Emirates ID</option>
+              <option value="passport">Passport</option>
+            </select>
+          </Field>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <IdSlot
+              label={idType === "emirates_id" ? "Front side" : "Photo page"}
+              url={idFrontUrl}
+              uploading={idUploadingSide === "front"}
+              onPick={() => idFrontRef.current?.click()}
+            />
+            <input
+              ref={idFrontRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => onPickId("front", e)}
+            />
+
+            {idType === "emirates_id" && (
+              <>
+                <IdSlot
+                  label="Back side"
+                  url={idBackUrl}
+                  uploading={idUploadingSide === "back"}
+                  onPick={() => idBackRef.current?.click()}
+                />
+                <input
+                  ref={idBackRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => onPickId("back", e)}
+                />
+              </>
+            )}
+          </div>
+
+          <p className="text-xs text-stone">
+            Your ID is stored privately and only visible to Woofwalk admins
+            reviewing your application.
+          </p>
+        </section>
+
+        <section className="space-y-4 border-t border-paper pt-6">
           <SectionLabel>Payouts</SectionLabel>
 
           {!payoutsState ? (
@@ -464,6 +630,49 @@ export default function WalkerProfileEdit() {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <h2 className="font-serif text-base text-midnight">{children}</h2>;
+}
+
+function IdSlot({
+  label,
+  url,
+  uploading,
+  onPick,
+}: {
+  label: string;
+  url: string | null;
+  uploading: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      disabled={uploading}
+      className="group relative flex aspect-[3/2] w-full items-center justify-center overflow-hidden rounded-xl border border-dashed border-chalk bg-paper/40 text-xs text-stone transition hover:border-midnight disabled:opacity-50"
+      aria-label={`Upload ${label}`}
+    >
+      {url ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt={label}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 flex items-end justify-start bg-gradient-to-t from-midnight/70 to-transparent p-2 opacity-0 transition group-hover:opacity-100">
+            <span className="text-xs font-medium text-bone">
+              Tap to replace {label.toLowerCase()}
+            </span>
+          </div>
+        </>
+      ) : (
+        <div className="flex flex-col items-center gap-1 px-4 text-center">
+          <span className="text-base">+</span>
+          <span>{uploading ? "Uploading…" : `Upload ${label.toLowerCase()}`}</span>
+        </div>
+      )}
+    </button>
+  );
 }
 
 function SubLabel({ children }: { children: React.ReactNode }) {
