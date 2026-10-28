@@ -12,8 +12,12 @@ export type Profile = {
   area: string | null;
   // Sub-community within the area, e.g. "Saheel 4", "Palmera 2", "District 10"
   community: string | null;
+  // Set true for staff who can access /admin
+  is_admin: boolean;
   created_at: string;
 };
+
+export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export type Dog = {
   id: string;
@@ -87,6 +91,11 @@ export type WalkerProfile = {
   stripe_charges_enabled: boolean;
   stripe_payouts_enabled: boolean;
   stripe_details_submitted: boolean;
+  // Admin approval — new walkers start 'pending' and can't accept walks
+  // until an admin flips this to 'approved'
+  approval_status: ApprovalStatus;
+  approval_notes: string | null;
+  approved_at: string | null;
   updated_at: string;
 };
 
@@ -924,4 +933,132 @@ export async function createReview(input: {
     comment: input.comment || null,
   });
   if (error) throw error;
+}
+
+// ================= Admin =================
+
+/** Shape returned by getPendingWalkers / getAllWalkers for the admin area. */
+export type AdminWalkerRow = WalkerProfile & {
+  name: string;
+  phone: string | null;
+  area: string | null;
+  community: string | null;
+  profile_created_at: string;
+};
+
+/** Top-of-dashboard counters. One cheap trip per metric is fine at this volume. */
+export type AdminStats = {
+  pending_walkers: number;
+  approved_walkers: number;
+  active_walks: number;         // accepted + in_progress
+  walks_today: number;
+  revenue_this_month_aed: number;
+  platform_fees_this_month_aed: number;
+  total_owners: number;
+  total_walkers: number;
+};
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const sb = getSupabase();
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  // Counts (head: true + count skip hauling rows across the wire)
+  const [
+    pending,
+    approved,
+    active,
+    walksToday,
+    paidThisMonth,
+    owners,
+    walkers,
+  ] = await Promise.all([
+    sb.from("walker_profiles").select("id", { head: true, count: "exact" }).eq("approval_status", "pending"),
+    sb.from("walker_profiles").select("id", { head: true, count: "exact" }).eq("approval_status", "approved"),
+    sb.from("walks").select("id", { head: true, count: "exact" }).in("status", ["accepted", "in_progress"]),
+    sb.from("walks").select("id", { head: true, count: "exact" }).gte("created_at", startOfToday.toISOString()),
+    sb.from("walks")
+      .select("price_aed, platform_fee_aed")
+      .eq("payment_status", "paid")
+      .gte("ended_at", startOfMonth.toISOString()),
+    sb.from("profiles").select("id", { head: true, count: "exact" }).eq("role", "owner"),
+    sb.from("profiles").select("id", { head: true, count: "exact" }).eq("role", "walker"),
+  ]);
+
+  const paidRows = (paidThisMonth.data as { price_aed: number; platform_fee_aed: number | null }[]) || [];
+  const revenue = paidRows.reduce((sum, r) => sum + (r.price_aed || 0), 0);
+  const fees = paidRows.reduce((sum, r) => sum + (r.platform_fee_aed || 0), 0);
+
+  return {
+    pending_walkers: pending.count || 0,
+    approved_walkers: approved.count || 0,
+    active_walks: active.count || 0,
+    walks_today: walksToday.count || 0,
+    revenue_this_month_aed: revenue,
+    platform_fees_this_month_aed: fees,
+    total_owners: owners.count || 0,
+    total_walkers: walkers.count || 0,
+  };
+}
+
+/** Walkers awaiting admin review, joined with their profile basics. */
+export async function getPendingWalkers(): Promise<AdminWalkerRow[]> {
+  return getWalkersByStatus("pending");
+}
+
+export async function getWalkersByStatus(status: ApprovalStatus): Promise<AdminWalkerRow[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("walker_profiles")
+    .select("*")
+    .eq("approval_status", status)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  const rows = (data as WalkerProfile[]) || [];
+  if (rows.length === 0) return [];
+
+  const { data: profs } = await sb
+    .from("profiles")
+    .select("id, name, phone, area, community, created_at")
+    .in("id", rows.map((r) => r.id));
+  const profById = new Map(((profs as any[]) || []).map((p) => [p.id, p]));
+
+  return rows.map((r) => {
+    const p = profById.get(r.id) || {};
+    return {
+      ...r,
+      name: p.name || "(unnamed)",
+      phone: p.phone || null,
+      area: p.area || null,
+      community: p.community || null,
+      profile_created_at: p.created_at || r.updated_at,
+    } as AdminWalkerRow;
+  });
+}
+
+/** Walks currently happening (accepted or in_progress). */
+export async function getAllActiveWalks(): Promise<WalkWithRefs[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("walks")
+    .select("*")
+    .in("status", ["accepted", "in_progress"])
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return enrichWalks((data as Walk[]) || []);
+}
+
+/** Recent walks across every status, newest first. */
+export async function getAllWalks(limit = 20): Promise<WalkWithRefs[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("walks")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return enrichWalks((data as Walk[]) || []);
 }

@@ -112,6 +112,14 @@ export default function OwnerHome() {
         right={
           <div className="flex items-center gap-3">
             <Wordmark className="opacity-80" />
+            {profile.is_admin && (
+              <Link
+                href="/admin"
+                className="text-xs text-midnight underline underline-offset-2 hover:no-underline"
+              >
+                Admin
+              </Link>
+            )}
             <button
               onClick={async () => {
                 await signOut();

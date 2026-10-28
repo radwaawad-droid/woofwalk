@@ -14,7 +14,7 @@ import {
   WalkerProfile,
   WalkWithRefs,
 } from "@/lib/db";
-import { Badge, Card, Empty, Header, PawIcon, Wordmark } from "@/components/UI";
+import { Badge, Button, Card, Empty, Header, PawIcon, Wordmark } from "@/components/UI";
 import { PushBootstrap } from "@/components/PushBootstrap";
 
 function timeAgo(ts: string) {
@@ -114,6 +114,93 @@ export default function WalkerHome() {
     return sum + (w.price_aed - fee);
   }, 0);
   const profileComplete = !!(walkerProfile?.photo_url && walkerProfile?.bio);
+  const approvalStatus = walkerProfile?.approval_status || "pending";
+  const approved = approvalStatus === "approved";
+
+  // ----- Approval gate -----
+  // New walkers (and rejected walkers) are blocked from the open-walks board
+  // until an admin approves them. They still see their shell + sign-out, and
+  // get a clear instruction on what to do next.
+  if (walkerProfile && !approved) {
+    const rejected = approvalStatus === "rejected";
+    return (
+      <main className="min-h-screen pb-10">
+        <Header
+          title=""
+          right={
+            <div className="flex items-center gap-3">
+              <Wordmark className="opacity-80" />
+              <button
+                onClick={async () => {
+                  await signOut();
+                  router.replace("/");
+                }}
+                className="text-xs text-stone hover:text-midnight"
+              >
+                Sign out
+              </button>
+            </div>
+          }
+        />
+
+        <section className="px-5 pt-4">
+          <p className="text-sm text-stone">Welcome,</p>
+          <h1 className="font-serif text-3xl leading-tight tracking-tightest">
+            {profile.name.split(" ")[0]}.
+          </h1>
+        </section>
+
+        <section className="space-y-4 px-5 py-6">
+          <Card tone={rejected ? "warn" : "dark"}>
+            <div className="text-xs uppercase tracking-wider text-lime">
+              {rejected ? "Application not accepted" : "Pending review"}
+            </div>
+            <h2 className="mt-2 font-serif text-2xl leading-tight">
+              {rejected
+                ? "We weren't able to approve your account."
+                : "Your account is being reviewed."}
+            </h2>
+            <p className="mt-2 text-sm text-bone/80">
+              {rejected
+                ? "You can update your profile and we'll take another look."
+                : "A member of the Woofwalk team will approve you shortly. You'll be able to accept walks once that's done."}
+            </p>
+            {rejected && walkerProfile.approval_notes && (
+              <div className="mt-4 rounded-lg bg-bone/10 px-3 py-2 text-xs text-bone/90">
+                <span className="font-medium">Reviewer note:</span>{" "}
+                {walkerProfile.approval_notes}
+              </div>
+            )}
+          </Card>
+
+          {!profileComplete && (
+            <Link href="/walker/profile/edit">
+              <Card tone="warn">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-amber2">
+                      Finish your profile first
+                    </div>
+                    <div className="mt-1.5 text-sm text-midnight">
+                      Add a clear photo and a short bio so we can review your
+                      application.
+                    </div>
+                  </div>
+                  <PawIcon className="h-5 w-5 text-midnight/60" />
+                </div>
+              </Card>
+            </Link>
+          )}
+
+          <Link href="/walker/profile/edit">
+            <Button variant="secondary">
+              {rejected ? "Update profile & reapply" : "Edit profile"}
+            </Button>
+          </Link>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen pb-10">
@@ -122,6 +209,14 @@ export default function WalkerHome() {
         right={
           <div className="flex items-center gap-3">
             <Wordmark className="opacity-80" />
+            {profile.is_admin && (
+              <Link
+                href="/admin"
+                className="text-xs text-midnight underline underline-offset-2 hover:no-underline"
+              >
+                Admin
+              </Link>
+            )}
             <button
               onClick={async () => {
                 await signOut();
