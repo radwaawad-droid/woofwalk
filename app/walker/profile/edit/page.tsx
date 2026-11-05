@@ -18,6 +18,7 @@ import {
 } from "@/lib/db";
 import { getSupabase } from "@/lib/supabase";
 import { Button, Field, Header, inputCls, PawIcon } from "@/components/UI";
+import { PAYMENTS_ENABLED } from "@/lib/features";
 
 export default function WalkerProfileEdit() {
   const router = useRouter();
@@ -203,8 +204,11 @@ export default function WalkerProfileEdit() {
     }
   }
 
-  // Pull payout state on mount; refresh after Stripe returns here
+  // Pull payout state on mount; refresh after Stripe returns here.
+  // Skipped entirely in cash mode — no point hitting Stripe when we're
+  // not using it.
   useEffect(() => {
+    if (!PAYMENTS_ENABLED) return;
     refreshPayoutsState();
     if (
       typeof window !== "undefined" &&
@@ -526,6 +530,7 @@ export default function WalkerProfileEdit() {
           </p>
         </section>
 
+        {PAYMENTS_ENABLED && (
         <section className="space-y-4 border-t border-paper pt-6">
           <SectionLabel>Payouts</SectionLabel>
 
@@ -600,6 +605,7 @@ export default function WalkerProfileEdit() {
             </div>
           )}
         </section>
+        )}
 
         {err && (
           <div className="rounded-xl border border-clay/40 bg-bone p-3 text-sm text-clay">

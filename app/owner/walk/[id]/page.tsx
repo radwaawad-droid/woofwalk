@@ -19,6 +19,7 @@ import {
 } from "@/lib/db";
 import { Badge, Button, Card, Header, PawIcon } from "@/components/UI";
 import { notify } from "@/lib/push";
+import { PAYMENTS_ENABLED } from "@/lib/features";
 
 const WalkMap = dynamic(() => import("@/components/WalkMap").then((m) => m.WalkMap), {
   ssr: false,
@@ -441,6 +442,28 @@ function PaymentStatusCard({
 }) {
   const [retrying, setRetrying] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+
+  // Cash mode — no Stripe, owner settles up with the walker directly
+  if (!PAYMENTS_ENABLED) {
+    return (
+      <Card>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-stone">
+              Payment
+            </div>
+            <div className="mt-1 font-serif text-lg">
+              Pay AED {walk.price_aed} in cash
+            </div>
+            <div className="mt-1 text-xs text-stone">
+              Please settle with {walk.walker_name || "your walker"} directly.
+            </div>
+          </div>
+          <div className="shrink-0 text-xs font-medium text-stone">💵</div>
+        </div>
+      </Card>
+    );
+  }
 
   const status = walk.payment_status || "unpaid";
   if (status === "paid") {

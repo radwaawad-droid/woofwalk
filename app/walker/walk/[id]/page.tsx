@@ -20,6 +20,7 @@ import {
 import { Button, CameraIcon, Card, Header, PawIcon } from "@/components/UI";
 import { WalkerLiveTracker } from "@/components/WalkerLiveTracker";
 import { notify } from "@/lib/push";
+import { PAYMENTS_ENABLED } from "@/lib/features";
 
 // Mapbox GL uses window at import, so load it only in the browser.
 const WalkMap = dynamic(() => import("@/components/WalkMap").then((m) => m.WalkMap), {
@@ -171,9 +172,11 @@ export default function WalkerWalkDetail() {
     try {
       await endWalk(walk.id);
       notify({ walk_id: walk.id, kind: "walk_ended" });
-      // Fire the charge; non-fatal if it fails (owner's walk-detail page
-      // surfaces the result either way). Don't block navigation on it.
-      chargeWalk(walk.id).catch(() => {});
+      // Fire the charge only when payments are on. With PAYMENTS_ENABLED=false
+      // we're in cash mode — owner pays the walker directly, nothing to charge.
+      if (PAYMENTS_ENABLED) {
+        chargeWalk(walk.id).catch(() => {});
+      }
       setTimeout(() => router.replace("/walker"), 400);
     } finally {
       setBusy(false);

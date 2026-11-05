@@ -1027,13 +1027,16 @@ export async function getAdminStats(): Promise<AdminStats> {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  // Counts (head: true + count skip hauling rows across the wire)
+  // Counts (head: true + count skip hauling rows across the wire).
+  // Revenue = gross value of every COMPLETED walk this month, regardless
+  // of how it's paid for — cash mode (walker takes payment on the day)
+  // or Stripe mode both count. Fees apply to Stripe-paid walks only.
   const [
     pending,
     approved,
     active,
     walksToday,
-    paidThisMonth,
+    completedThisMonth,
     owners,
     walkers,
   ] = await Promise.all([
@@ -1042,16 +1045,24 @@ export async function getAdminStats(): Promise<AdminStats> {
     sb.from("walks").select("id", { head: true, count: "exact" }).in("status", ["accepted", "in_progress"]),
     sb.from("walks").select("id", { head: true, count: "exact" }).gte("created_at", startOfToday.toISOString()),
     sb.from("walks")
-      .select("price_aed, platform_fee_aed")
-      .eq("payment_status", "paid")
+      .select("price_aed, platform_fee_aed, payment_status")
+      .eq("status", "completed")
       .gte("ended_at", startOfMonth.toISOString()),
     sb.from("profiles").select("id", { head: true, count: "exact" }).eq("role", "owner"),
     sb.from("profiles").select("id", { head: true, count: "exact" }).eq("role", "walker"),
   ]);
 
-  const paidRows = (paidThisMonth.data as { price_aed: number; platform_fee_aed: number | null }[]) || [];
-  const revenue = paidRows.reduce((sum, r) => sum + (r.price_aed || 0), 0);
-  const fees = paidRows.reduce((sum, r) => sum + (r.platform_fee_aed || 0), 0);
+  const rows =
+    (completedThisMonth.data as {
+      price_aed: number;
+      platform_fee_aed: number | null;
+      payment_status: string | null;
+    }[]) || [];
+  const revenue = rows.reduce((sum, r) => sum + (r.price_aed || 0), 0);
+  const fees = rows.reduce(
+    (sum, r) => (r.payment_status === "paid" ? sum + (r.platform_fee_aed || 0) : sum),
+    0,
+  );
 
   return {
     pending_walkers: pending.count || 0,

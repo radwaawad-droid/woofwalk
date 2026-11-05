@@ -13,6 +13,7 @@ import { getStripeClient } from "@/lib/stripe-client";
 import { getMyProfile } from "@/lib/db";
 import { getSupabase } from "@/lib/supabase";
 import { Button, Header } from "@/components/UI";
+import { PAYMENTS_ENABLED } from "@/lib/features";
 
 type Card = {
   id: string;
@@ -52,6 +53,11 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [configured, setConfigured] = useState(true);
+
+  // Cash mode — bounce them to the home page; this screen has no meaning
+  useEffect(() => {
+    if (!PAYMENTS_ENABLED) router.replace("/owner");
+  }, [router]);
 
   async function safeJson(res: Response) {
     const text = await res.text();
