@@ -14,7 +14,6 @@ import {
 } from "@/lib/db";
 import { Badge, Button, Card, Empty, Header, PawIcon, Wordmark } from "@/components/UI";
 import { PushBootstrap } from "@/components/PushBootstrap";
-import { PAYMENTS_ENABLED } from "@/lib/features";
 
 function statusTone(s: WalkWithRefs["status"]) {
   if (s === "pending") return "warn" as const;
@@ -146,14 +145,6 @@ export default function OwnerHome() {
           >
             Edit your profile
           </Link>
-          {PAYMENTS_ENABLED && (
-            <Link
-              href="/owner/payment"
-              className="underline underline-offset-2 hover:text-midnight"
-            >
-              Payment
-            </Link>
-          )}
         </div>
       </section>
 

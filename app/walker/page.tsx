@@ -107,12 +107,8 @@ export default function WalkerHome() {
     );
   }
 
-  // 10% platform fee, min AED 1 — matches platformFeeFromPrice() on the server
-  const grossEarnings = completed.reduce((sum, w) => sum + w.price_aed, 0);
-  const earnings = completed.reduce((sum, w) => {
-    const fee = Math.max(1, Math.round(w.price_aed * 0.1));
-    return sum + (w.price_aed - fee);
-  }, 0);
+  // Cash mode — walker keeps everything the owner pays them. No commission.
+  const earnings = completed.reduce((sum, w) => sum + w.price_aed, 0);
   const profileComplete = !!(walkerProfile?.photo_url && walkerProfile?.bio);
   const approvalStatus = walkerProfile?.approval_status || "pending";
   const approved = approvalStatus === "approved";
@@ -269,12 +265,6 @@ export default function WalkerHome() {
               </div>
               <div className="mt-1 text-sm text-bone/70">
                 {completed.length} walk{completed.length === 1 ? "" : "s"} completed
-                {grossEarnings > earnings && (
-                  <>
-                    {" "}
-                    · AED {grossEarnings - earnings} fee
-                  </>
-                )}
               </div>
             </div>
           </div>

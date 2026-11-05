@@ -17,7 +17,6 @@ import {
   signOut,
   Profile,
 } from "@/lib/db";
-import { PAYMENTS_ENABLED } from "@/lib/features";
 import { getSupabase } from "@/lib/supabase";
 import { Badge, Button, Card, Empty, Header, Wordmark } from "@/components/UI";
 
@@ -240,13 +239,9 @@ export default function AdminHome() {
           <StatTile label="Walks right now" value={stats.active_walks} tone="accent" />
           <StatTile label="Walks today" value={stats.walks_today} />
           <StatTile
-            label={PAYMENTS_ENABLED ? "Revenue this month" : "Walks value this month"}
+            label="Walks value this month"
             value={money(stats.revenue_this_month_aed)}
-            sub={
-              PAYMENTS_ENABLED
-                ? `${money(stats.platform_fees_this_month_aed)} in fees`
-                : "Cash — settled walker ↔ owner"
-            }
+            sub="Paid in cash · walker ↔ owner"
           />
           <StatTile label="Approved walkers" value={stats.approved_walkers} />
           <StatTile label="Total owners" value={stats.total_owners} />
